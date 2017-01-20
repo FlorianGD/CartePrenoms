@@ -30,3 +30,19 @@ france
 head(france@data)
 str(france@data)
 ```
+Essayons un premier graphique à l'aide de `tmap`
+```{r}
+tm_shape(france) +
+  tm_borders()
+```
+Avec, les départements d'outre-mer (DOM) la carte est illisible. En première approche, nous allons ignorer ces DOM. Pour les exclure, nous allons utiliser le fait que les départements de France métropolitaine sont codés sur 2 chiffres alors que les DOM sont codés sur 3 chiffres.
+```{r}
+france <- france[str_length(france$code_insee) == 2, ]
+france
+tm_shape(france) + tm_borders()
+```
+Lisons maintenant les données des prénoms
+```{r}
+prenoms <- read_tsv("dpt2015.txt")
+```
+
