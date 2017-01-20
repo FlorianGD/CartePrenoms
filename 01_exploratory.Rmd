@@ -1,12 +1,13 @@
 ---
-title: "Carte des prénoms"
+title: "Carte de France des prénoms"
 author: "Florian Gaudin-Delrieu"
-output: 
-  html_document: 
+date: "20 janvier 2017"
+output:
+  html_document:
     keep_md: yes
 ---
 
-# Récupération des données
+## Récupération des données
 
 Les données sont en accès libre sur la plateforme [open data du gouvernement français](https://www.data.gouv.fr/fr/datasets/contours-des-departements-francais-issus-d-openstreetmap/).
 Les données sont issues d'OpenStreetMap, et sont donc "© les contributeurs d'OpenStreetMap sous licence ODbL".
@@ -22,7 +23,7 @@ library(stringr)
 library(tidyverse)
 ```
  
- J'ai choisi de récupérer les données de 2014 simplifiées à 100m, qui sont moins lourdes à traiter que les données de 2017 non simplifiées.
+J'ai choisi de récupérer les données de 2014 simplifiées à 100m, qui sont moins lourdes à traiter que les données de 2017 non simplifiées.
 
 ```{r lecture données, echo=TRUE}
 france <- readOGR("departements", "departements-20140306-100m", stringsAsFactors = FALSE, use_iconv = TRUE, encoding = "iso-8859-1")
@@ -30,19 +31,26 @@ france
 head(france@data)
 str(france@data)
 ```
+
 Essayons un premier graphique à l'aide de `tmap`
+
 ```{r}
 tm_shape(france) +
   tm_borders()
 ```
+
 Avec, les départements d'outre-mer (DOM) la carte est illisible. En première approche, nous allons ignorer ces DOM. Pour les exclure, nous allons utiliser le fait que les départements de France métropolitaine sont codés sur 2 chiffres alors que les DOM sont codés sur 3 chiffres.
 ```{r}
 france <- france[str_length(france$code_insee) == 2, ]
 france
 tm_shape(france) + tm_borders()
 ```
+
 Lisons maintenant les données des prénoms
+
 ```{r}
 prenoms <- read_tsv("dpt2015.txt")
+head(prenoms)
 ```
+Les données manquantes apparaissent comme `"XXXX"` pour les années de naissance, et `"XX"` pour les départements.
 
