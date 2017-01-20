@@ -1,0 +1,27 @@
+---
+title: "Carte des prénoms"
+output: html_notebook
+  
+---
+
+# Récupération des données
+
+Les données sont en accès libre sur la plateforme [open data du gouvernement français](https://www.data.gouv.fr/fr/datasets/contours-des-departements-francais-issus-d-openstreetmap/).
+Les données sont issues d'OpenStreetMap, et sont donc "© les contributeurs d'OpenStreetMap sous licence ODbL".
+
+Les données sur les prénoms sont aussi en open source, [fournies par l'INSEE ](http://www.data.gouv.fr/fr/datasets/fichier-des-prenoms-edition-2016/).
+
+```{r, libraries nécessaires}
+library(sp)
+library(rgdal, warn.conflicts = FALSE)
+library(tmap, warn.conflicts = FALSE)
+library(stringr)
+library(tidyverse, warn.conflicts = FALSE)
+```
+ 
+ J'ai choisi de récupérer les données de 2014 simplifiées à 100m, qui sont moins lourdes à traiter que les données de 2017 non simplifiées.
+ 
+ ```{r, chargement des données spatiales}
+france <- readOGR("departements", "departements-20140306-100m")
+names(france$data)
+```
