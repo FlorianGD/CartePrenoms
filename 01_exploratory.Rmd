@@ -52,5 +52,32 @@ Lisons maintenant les données des prénoms
 prenoms <- read_tsv("dpt2015.txt")
 head(prenoms)
 ```
+
 Les données manquantes apparaissent comme `"XXXX"` pour les années de naissance, et `"XX"` pour les départements.
+
+```{r données manquantes}
+table(prenoms$dpt == "XX") # Moins de 1% des départements sont manquants
+table(prenoms$annais == "XXXX") # Il y a exactement le même nombre d'années de naissance manquantes
+filter(prenoms, dpt == "XX", annais != "XXXX") # Toutes les données manquantes sont sur les mêmes lignes
+```
+Les données manquantes étant sur les mêmes lignes, nous allons les supprimer, puisque nous ne pouvons pas les placer par département. Nous allons renommer les variables pour des noms moins obscurs, et nous changeons le département en code_insee, pour pouvoir joindre les données avec la carte plus facilement.
+
+```{r transformation des données}
+prenoms <- prenoms %>% 
+  rename(prenom = preusuel, annee = annais, code_insee = dpt) %>% 
+  mutate(sexe = factor(sexe, levels = c(1, 2), labels = c("M", "F"))) %>% 
+  filter(annee != "XXXX")
+head(prenoms)
+```
+
+## Carte pour un prénom, toutes années confondues
+
+Essayons de résumer les données pour un prénom (par exemple `"Florian"`), toutes années confondues
+```{r calculs résumé}
+florian <- prenoms %>% 
+  filter(prenom == "FLORIAN") %>% 
+  group_by(code_insee) %>% 
+  summarise(n = sum(nombre))
+```
+
 
