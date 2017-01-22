@@ -2,9 +2,7 @@
 title: "Carte de France des prénoms"
 author: "Florian Gaudin-Delrieu"
 date: "20 janvier 2017"
-output:
-  html_document:
-    keep_md: yes
+output: github_document
 ---
 
 ## Récupération des données
@@ -35,13 +33,13 @@ str(france@data)
 
 Essayons un premier graphique à l'aide de `tmap`
 
-```{r}
+```{r carteFrance}
 tm_shape(france) +
   tm_borders()
 ```
 
 Avec, les départements d'outre-mer (DOM) la carte est illisible. En première approche, nous allons ignorer ces DOM. Pour les exclure, nous allons utiliser le fait que les départements de France métropolitaine sont codés sur 2 chiffres alors que les DOM sont codés sur 3 chiffres.
-```{r}
+```{r carteFranceMetro}
 france <- france[str_length(france$code_insee) == 2, ]
 france
 tm_shape(france) + tm_borders()
@@ -81,13 +79,14 @@ florian <- prenoms %>%
   summarise(total = sum(nombre))
 ```
 
-```{r}
+```{r carteFlorian}
 tm_shape(sp::merge(france, florian)) +
   tm_borders() +
   tm_fill(col = "total")
 ```
+
 Il y a de nombreux Florian dans le Nord, intéressant ! La Corse est manquante, cela doit venir du fait que les départements sont 2A et 2B, et doivent être marqués comme 20 dans un des 2 jeux de données, ce qui fait que la jointure ne marche pas.
 ```{r}
-setdiff(unique(france$code_insee), unique(prenoms$code_insee)) # Il n'y a bien que la Corse qui est dans france
+setdiff(unique(france$code_insee), unique(prenoms$code_insee)) # Il n'y a bien que la Corse qui est dans france$code_insee
 ```
 
