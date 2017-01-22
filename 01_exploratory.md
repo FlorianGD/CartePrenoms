@@ -267,7 +267,7 @@ tm_shape(sp::merge(france, florian2)) +
 
 ![](01_exploratory_files/figure-markdown_github/carteFlorianAvecCorse-1.png)
 
-On ne voit pas la région parisienne
+On ne voit pas bien la région parisienne.
 
 ``` r
 paris <- france[france$code_insee %in% c("75", "92", "93", "94"), ]
@@ -277,6 +277,8 @@ tm_shape(sp::merge(paris, florian2))+
 ```
 
 ![](01_exploratory_files/figure-markdown_github/paris-1.png)
+
+J'ai modifié la légende manuellement pour avoir la même que sur la carte de toute la France.
 
 Autre approche pour les graphes
 -------------------------------
@@ -358,4 +360,30 @@ print(p4, vp=viewport(layout.pos.col = 2))
 
 ![](01_exploratory_files/figure-markdown_github/testFlorianAvecParis-1.png)
 
-Bon, cette approche n'est pas très concluante.
+Bon, cette approche n'est pas très concluante. Je vais plutôt faire une seule carte avec toute la France métropolitaine, sans les DOM, et sans "zoom" sur la région parisienne.
+
+Proportion de naissances
+------------------------
+
+Le fait de dessiner le nombre de naissances donnera le plus souvent une carte des populations et ne nous renseignera pas sur la particularité d'un prénom. Donc au lieu de remplir en fonction du nombre de naissances, nous allons le faire en fonction du pourcentage de naissance de ce prénomn, dans chaque département.
+
+``` r
+naissances <- prenoms %>% 
+  group_by(code_insee) %>% 
+  summarise(naissances = sum(nombre))
+
+florian3 <- inner_join(florian2, naissances) %>% 
+  mutate(prop = total / naissances)
+```
+
+    ## Joining, by = "code_insee"
+
+``` r
+tm_shape(sp::merge(france, florian3)) +
+  tm_borders(alpha = 0.5) +
+  tm_fill("prop")
+```
+
+![](01_exploratory_files/figure-markdown_github/calculPourcentage-1.png)
+
+La carte est très différente de la première version ! Le Nord disparaît, et on voit une concentration dans la région Sud-Est, ainsi qu'un gros pic en Essonne et dans le Val d'Oise.

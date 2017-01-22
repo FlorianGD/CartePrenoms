@@ -128,6 +128,8 @@ tm_shape(sp::merge(paris, florian2))+
   tm_fill(col = "total", breaks = seq(0, 7000, by = 1000))
 ```
 
+J'ai modifié la légende manuellement pour avoir la même que sur la carte de toute la France.
+
 ## Autre approche pour les graphes
 
 Plutôt que de supprimer les données, peut être est-il utile de "facetter" les régions que l'on ne voit pas (DOM et région parisienne) ?
@@ -187,4 +189,23 @@ print(p3, vp=viewport(layout.pos.col = 1))
 print(p4, vp=viewport(layout.pos.col = 2))
 ```
 
-Bon, cette approche n'est pas très concluante.
+Bon, cette approche n'est pas très concluante. Je vais plutôt faire une seule carte avec toute la France métropolitaine, sans les DOM, et sans "zoom" sur la région parisienne.
+
+## Proportion de naissances
+
+Le fait de dessiner le nombre de naissances donnera le plus souvent une carte des populations et ne nous renseignera pas sur la particularité d'un prénom. Donc au lieu de remplir en fonction du nombre de naissances, nous allons le faire en fonction du pourcentage de naissance de ce prénomn, dans chaque département.
+
+```{r calculPourcentage}
+naissances <- prenoms %>% 
+  group_by(code_insee) %>% 
+  summarise(naissances = sum(nombre))
+
+florian3 <- inner_join(florian2, naissances) %>% 
+  mutate(prop = total / naissances)
+
+tm_shape(sp::merge(france, florian3)) +
+  tm_borders(alpha = 0.5) +
+  tm_fill("prop")
+```
+
+La carte est très différente de la première version ! Le Nord disparaît, et on voit une concentration dans la région Sud-Est, ainsi qu'un gros pic en Essonne et dans le Val d'Oise.
