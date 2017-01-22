@@ -44,6 +44,10 @@ library(tidyverse)
     ## lag():     dplyr, stats
     ## select():  dplyr, raster
 
+``` r
+library(grid)
+```
+
 J'ai choisi de récupérer les données de 2014 simplifiées à 100m, qui sont moins lourdes à traiter que les données de 2017 non simplifiées.
 
 ``` r
@@ -299,3 +303,59 @@ tm_shape(france2) +
 ```
 
 ![](01_exploratory_files/figure-markdown_github/facets-1.png)
+
+Ce n'est pas très satisfaisant, la métropole est beaucoup trop petite par rapport au reste. On pourrait partir sur 2 graphes : un pour la métropole et un pour les autres sous forme de facettes.
+
+``` r
+france_metro <- france2[france2$facet == "Métropole", ]
+france_autre <- france2[france2$facet != "Métropole", ]
+
+p1 <- tm_shape(france_metro) +
+  tm_borders()
+p2 <- tm_shape(france_autre) +
+  tm_borders() +
+  tm_facets("facet", free.coords = TRUE, ncol = 1)
+
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(nrow = 1, ncol = 2, widths = unit(c(0.8, 0.2), "npc"))))
+print(p1, vp=viewport(layout.pos.col = 1))
+print(p2, vp=viewport(layout.pos.col = 2))
+```
+
+![](01_exploratory_files/figure-markdown_github/deuxGraphes-1.png)
+
+Ce n'est pas trop mal. Testons avec les prénoms
+
+``` r
+sort(unique(prenoms$code_insee))
+```
+
+    ##  [1] "01" "02" "03" "04" "05" "06" "07" "08" "09" "10" "11" "12" "13" "14"
+    ## [15] "15" "16" "17" "18" "19" "21" "22" "23" "24" "25" "26" "27" "28" "29"
+    ## [29] "2A" "2B" "30" "31" "32" "33" "34" "35" "36" "37" "38" "39" "40" "41"
+    ## [43] "42" "43" "44" "45" "46" "47" "48" "49" "50" "51" "52" "53" "54" "55"
+    ## [57] "56" "57" "58" "59" "60" "61" "62" "63" "64" "65" "66" "67" "68" "69"
+    ## [71] "70" "71" "72" "73" "74" "75" "76" "77" "78" "79" "80" "81" "82" "83"
+    ## [85] "84" "85" "86" "87" "88" "89" "90" "91" "92" "93" "94" "95" "97"
+
+Le problème est que les DOM ne sont pas détaillés dans le fichier prenoms : ils sont tous indiqués comme 97. On pourrait diviser en 5 le nombre donné dans le fichier, mais ça aurait bien moins de sens que pour la Corse, vu la diversité des territoires.
+
+``` r
+france_autre <- france2[france2$facet == "Paris", ]
+
+p3 <- tm_shape(sp::merge(france_metro, florian2)) +
+  tm_borders() +
+  tm_fill(col = "total")
+p4 <- tm_shape(sp::merge(france_autre, florian2)) +
+  tm_borders() +
+  tm_fill(col = "total")
+
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(nrow = 1, ncol = 2, widths = unit(c(0.8, 0.2), "npc"))))
+print(p3, vp=viewport(layout.pos.col = 1))
+print(p4, vp=viewport(layout.pos.col = 2))
+```
+
+![](01_exploratory_files/figure-markdown_github/testFlorianAvecParis-1.png)
+
+Bon, cette approche n'est pas très concluante.

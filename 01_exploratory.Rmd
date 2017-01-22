@@ -19,6 +19,7 @@ library(tmap)
 library(raster)
 library(stringr)
 library(tidyverse)
+library(grid)
 ```
  
 J'ai choisi de récupérer les données de 2014 simplifiées à 100m, qui sont moins lourdes à traiter que les données de 2017 non simplifiées.
@@ -118,7 +119,7 @@ tm_shape(sp::merge(france, florian2)) +
   tm_fill(col = "total")
 ```
 
-On ne voit pas la région parisienne
+On ne voit pas bien la région parisienne.
 
 ```{r paris}
 paris <- france[france$code_insee %in% c("75", "92", "93", "94"), ]
@@ -143,3 +144,47 @@ tm_shape(france2) +
   tm_facets("facet", free.coords = TRUE)
 ```
 
+Ce n'est pas très satisfaisant, la métropole est beaucoup trop petite par rapport au reste. On pourrait partir sur 2 graphes : un pour la métropole et un pour les autres sous forme de facettes.
+
+```{r deuxGraphes}
+france_metro <- france2[france2$facet == "Métropole", ]
+france_autre <- france2[france2$facet != "Métropole", ]
+
+p1 <- tm_shape(france_metro) +
+  tm_borders()
+p2 <- tm_shape(france_autre) +
+  tm_borders() +
+  tm_facets("facet", free.coords = TRUE, ncol = 1)
+
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(nrow = 1, ncol = 2, widths = unit(c(0.8, 0.2), "npc"))))
+print(p1, vp=viewport(layout.pos.col = 1))
+print(p2, vp=viewport(layout.pos.col = 2))
+```
+
+Ce n'est pas trop mal. Testons avec les prénoms
+
+```{r facetEtPrenoms}
+
+sort(unique(prenoms$code_insee))
+```
+
+Le problème est que les DOM ne sont pas détaillés dans le fichier prenoms : ils sont tous indiqués comme 97. On pourrait diviser en 5 le nombre donné dans le fichier, mais ça aurait bien moins de sens que pour la Corse, vu la diversité des territoires.
+
+```{r testFlorianAvecParis}
+france_autre <- france2[france2$facet == "Paris", ]
+
+p3 <- tm_shape(sp::merge(france_metro, florian2)) +
+  tm_borders() +
+  tm_fill(col = "total")
+p4 <- tm_shape(sp::merge(france_autre, florian2)) +
+  tm_borders() +
+  tm_fill(col = "total")
+
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(nrow = 1, ncol = 2, widths = unit(c(0.8, 0.2), "npc"))))
+print(p3, vp=viewport(layout.pos.col = 1))
+print(p4, vp=viewport(layout.pos.col = 2))
+```
+
+Bon, cette approche n'est pas très concluante.
