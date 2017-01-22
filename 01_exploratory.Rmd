@@ -31,6 +31,7 @@ france
 head(france@data)
 str(france@data)
 ```
+*Note :* Pour ne plus avoir le message d'erreur `NOTE: rgdal::checkCRSArgs: no proj_defs.dat in PROJ.4 shared files`, j'ai fait comme indiqué à [cette adresse](https://gis.stackexchange.com/questions/224467/raster-error-note-rgdalcheckcrsargs-no-proj-defs-dat-in-proj-4-shared-file)'
 
 Essayons un premier graphique à l'aide de `tmap`
 
@@ -77,7 +78,16 @@ Essayons de résumer les données pour un prénom (par exemple `"Florian"`), tou
 florian <- prenoms %>% 
   filter(prenom == "FLORIAN") %>% 
   group_by(code_insee) %>% 
-  summarise(n = sum(nombre))
+  summarise(total = sum(nombre))
 ```
 
+```{r}
+tm_shape(sp::merge(france, florian)) +
+  tm_borders() +
+  tm_fill(col = "total")
+```
+Il y a de nombreux Florian dans le Nord, intéressant ! La Corse est manquante, cela doit venir du fait que les départements sont 2A et 2B, et doivent être marqués comme 20 dans un des 2 jeux de données, ce qui fait que la jointure ne marche pas.
+```{r}
+setdiff(unique(france$code_insee), unique(prenoms$code_insee)) # Il n'y a bien que la Corse qui est dans france
+```
 

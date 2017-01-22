@@ -106,6 +106,7 @@ str(france@data)
 ##  $ nuts3     : chr  "FR711" "FR221" "FR721" "FR821" ...
 ##  $ wikipedia : chr  "fr:Ain (département)" "fr:Aisne (département)" "fr:Allier (département)" "fr:Alpes-de-Haute-Provence" ...
 ```
+*Note :* Pour ne plus avoir le message d'erreur `NOTE: rgdal::checkCRSArgs: no proj_defs.dat in PROJ.4 shared files`, j'ai fait comme indiqué à [cette adresse](https://gis.stackexchange.com/questions/224467/raster-error-note-rgdalcheckcrsargs-no-proj-defs-dat-in-proj-4-shared-file)'
 
 Essayons un premier graphique à l'aide de `tmap`
 
@@ -174,5 +175,88 @@ head(prenoms)
 ## 5     1    AADIL   XXXX    XX    162
 ## 6     1   AAKASH   XXXX    XX     24
 ```
+
 Les données manquantes apparaissent comme `"XXXX"` pour les années de naissance, et `"XX"` pour les départements.
+
+
+```r
+table(prenoms$dpt == "XX") # Moins de 1% des départements sont manquants
+```
+
+```
+## 
+##   FALSE    TRUE 
+## 3372275   33036
+```
+
+```r
+table(prenoms$annais == "XXXX") # Il y a exactement le même nombre d'années de naissance manquantes
+```
+
+```
+## 
+##   FALSE    TRUE 
+## 3372275   33036
+```
+
+```r
+filter(prenoms, dpt == "XX", annais != "XXXX") # Toutes les données manquantes sont sur les mêmes lignes
+```
+
+```
+## # A tibble: 0 × 5
+## # ... with 5 variables: sexe <int>, preusuel <chr>, annais <chr>,
+## #   dpt <chr>, nombre <dbl>
+```
+Les données manquantes étant sur les mêmes lignes, nous allons les supprimer, puisque nous ne pouvons pas les placer par département. Nous allons renommer les variables pour des noms moins obscurs, et nous changeons le département en code_insee, pour pouvoir joindre les données avec la carte plus facilement.
+
+
+```r
+prenoms <- prenoms %>% 
+  rename(prenom = preusuel, annee = annais, code_insee = dpt) %>% 
+  mutate(sexe = factor(sexe, levels = c(1, 2), labels = c("M", "F"))) %>% 
+  filter(annee != "XXXX")
+head(prenoms)
+```
+
+```
+## # A tibble: 6 × 5
+##     sexe prenom annee code_insee nombre
+##   <fctr>  <chr> <chr>      <chr>  <dbl>
+## 1      M  AADIL  1983         84      3
+## 2      M  AADIL  1992         92      3
+## 3      M  AARON  1962         75      3
+## 4      M  AARON  1982         75      3
+## 5      M  AARON  1984         75      3
+## 6      M  AARON  1985         75      4
+```
+
+## Carte pour un prénom, toutes années confondues
+
+Essayons de résumer les données pour un prénom (par exemple `"Florian"`), toutes années confondues
+
+```r
+florian <- prenoms %>% 
+  filter(prenom == "FLORIAN") %>% 
+  group_by(code_insee) %>% 
+  summarise(total = sum(nombre))
+```
+
+
+```r
+tm_shape(sp::merge(france, florian)) +
+  tm_borders() +
+  tm_fill(col = "total")
+```
+
+![](01_exploratory_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+Il y a de nombreux Florian dans le Nord, intéressant ! La Corse est manquante, cela doit venir du fait que les départements sont 2A et 2B, et doivent être marqués comme 20 dans un des 2 jeux de données, ce qui fait que la jointure ne marche pas.
+
+```r
+setdiff(unique(france$code_insee), unique(prenoms$code_insee)) # Il n'y a bien que la Corse qui est dans france
+```
+
+```
+## [1] "2A" "2B"
+```
 
