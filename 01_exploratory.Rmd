@@ -120,10 +120,26 @@ tm_shape(sp::merge(france, florian2)) +
 
 On ne voit pas la région parisienne
 
-```{r}
+```{r paris}
 paris <- france[france$code_insee %in% c("75", "92", "93", "94"), ]
 tm_shape(sp::merge(paris, florian2))+
   tm_borders() +
-  tm_fill(col = "total")
+  tm_fill(col = "total", breaks = seq(0, 7000, by = 1000))
+```
+
+## Autre approche pour les graphes
+
+Plutôt que de supprimer les données, peut être est-il utile de "facetter" les régions que l'on ne voit pas (DOM et région parisienne) ?
+
+```{r facets}
+france2 <- readOGR("departements", "departements-20140306-100m", stringsAsFactors = FALSE, use_iconv = TRUE, encoding = "iso-8859-1")
+
+france2$facet <- "Métropole"
+france2$facet[france2$code_insee %in% c(c("75", "92", "93", "94"))] <- "Paris"
+france2$facet[str_length(france2$code_insee) > 2] <- str_sub(france2$wikipedia[str_length(france2$code_insee) > 2], 4) 
+
+tm_shape(france2) +
+  tm_borders() +
+  tm_facets("facet", free.coords = TRUE)
 ```
 

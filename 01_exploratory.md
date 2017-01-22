@@ -218,10 +218,84 @@ tm_shape(sp::merge(france, florian)) +
 
 ![](01_exploratory_files/figure-markdown_github/carteFlorian-1.png)
 
-Il y a de nombreux Florian dans le Nord, intéressant ! La Corse est manquante, cela doit venir du fait que les départements sont 2A et 2B, et doivent être marqués comme 20 dans un des 2 jeux de données, ce qui fait que la jointure ne marche pas.
+Il y a de nombreux Florian dans le Nord, intéressant ! La Corse est manquante, cela doit venir du fait que les départements sont 2A et 2B, et doivent être marqués comme 20 dans un des deux jeux de données, ce qui fait que la jointure ne marche pas.
 
 ``` r
-setdiff(unique(france$code_insee), unique(prenoms$code_insee)) # Il n'y a bien que la Corse qui est dans france$code_insee
+setdiff(unique(france$code_insee), unique(prenoms$code_insee)) # Il n'y a bien que la Corse qui pose problème
 ```
 
     ## [1] "2A" "2B"
+
+Changeons les départements dans prenoms pour que la jointure soit la bonne.
+
+``` r
+prenoms_corse <- prenoms %>% 
+  filter(code_insee == "20") %>% 
+  mutate(code_insee = "2B", nombre = nombre / 2)
+
+
+prenoms$code_insee[prenoms$code_insee == "20"] <- "2A"
+prenoms$nombre[prenoms$code_insee == "2A"] <- prenoms$nombre[prenoms$code_insee == "2A"] / 2
+prenoms <- prenoms %>% bind_rows(prenoms_corse) 
+
+florian2 <- prenoms %>% 
+  filter(prenom == "FLORIAN") %>% 
+  group_by(code_insee) %>% 
+  summarise(total = sum(nombre))
+
+# Contrôle rapide
+setdiff(florian2, florian)
+```
+
+    ## # A tibble: 2 × 2
+    ##   code_insee total
+    ##        <chr> <dbl>
+    ## 1         2A 192.5
+    ## 2         2B 192.5
+
+Refaisons la carte
+
+``` r
+tm_shape(sp::merge(france, florian2)) +
+  tm_borders() +
+  tm_fill(col = "total")
+```
+
+![](01_exploratory_files/figure-markdown_github/carteFlorianAvecCorse-1.png)
+
+On ne voit pas la région parisienne
+
+``` r
+paris <- france[france$code_insee %in% c("75", "92", "93", "94"), ]
+tm_shape(sp::merge(paris, florian2))+
+  tm_borders() +
+  tm_fill(col = "total", breaks = seq(0, 7000, by = 1000))
+```
+
+![](01_exploratory_files/figure-markdown_github/paris-1.png)
+
+Autre approche pour les graphes
+-------------------------------
+
+Plutôt que de supprimer les données, peut être est-il utile de "facetter" les régions que l'on ne voit pas (DOM et région parisienne) ?
+
+``` r
+france2 <- readOGR("departements", "departements-20140306-100m", stringsAsFactors = FALSE, use_iconv = TRUE, encoding = "iso-8859-1")
+```
+
+    ## OGR data source with driver: ESRI Shapefile 
+    ## Source: "departements", layer: "departements-20140306-100m"
+    ## with 101 features
+    ## It has 4 fields
+
+``` r
+france2$facet <- "Métropole"
+france2$facet[france2$code_insee %in% c(c("75", "92", "93", "94"))] <- "Paris"
+france2$facet[str_length(france2$code_insee) > 2] <- str_sub(france2$wikipedia[str_length(france2$code_insee) > 2], 4) 
+
+tm_shape(france2) +
+  tm_borders() +
+  tm_facets("facet", free.coords = TRUE)
+```
+
+![](01_exploratory_files/figure-markdown_github/facets-1.png)
