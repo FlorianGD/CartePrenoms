@@ -119,3 +119,11 @@ tm_shape(sp::merge(france, florian2)) +
 ```
 
 On ne voit pas la région parisienne
+
+```{r}
+paris <- france[france$code_insee %in% c("75", "92", "93", "94"), ]
+tm_shape(sp::merge(paris, florian2))+
+  tm_borders() +
+  tm_fill(col = "total")
+```
+
