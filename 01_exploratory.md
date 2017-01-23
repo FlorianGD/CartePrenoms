@@ -377,13 +377,9 @@ naissances <- prenoms %>%
   group_by(code_insee) %>% 
   summarise(naissances = sum(nombre))
 
-florian3 <- inner_join(florian2, naissances) %>% 
+florian3 <- inner_join(florian2, naissances, by = "code_insee") %>% 
   mutate(prop = total / naissances)
-```
 
-    ## Joining, by = "code_insee"
-
-``` r
 tm_shape(sp::merge(france, florian3)) +
   tm_borders(alpha = 0.5) +
   tm_fill("prop")
@@ -465,4 +461,93 @@ ggplot(naissances_annees %>%
 
 ![](01_exploratory_files/figure-markdown_github/naissancesRP-1.png)
 
-Nous allons faire un faux historique pour ces départements, à partir d'une proportion du département de Paris.
+Nous allons faire un faux historique pour ces départements, à partir d'une proportion des départements de Paris et des Yvelines.
+
+``` r
+prop_seine <- naissances_annees %>% 
+  filter(code_insee %in% c("75", "92", "93", "94"),
+         annee >= 1968) %>% 
+  group_by(code_insee) %>% 
+  summarise(total = sum(naissances)) %>% 
+  mutate(prop = total/ sum(total)) %>% 
+  select(-total)
+
+naissances_recalculees <- naissances_annees %>% 
+  filter(code_insee == "75",
+         annee < 1968) %>% 
+  complete(annee, code_insee = c("75", "92", "93", "94")) %>% 
+  fill(naissances) %>% 
+  inner_join(prop_seine, by = "code_insee") %>% 
+  mutate(naissances = prop * naissances) %>% 
+  select(-prop)
+
+naissances_paris <- naissances_annees %>% 
+  filter(annee >= 1968, code_insee %in% c("75", "92", "93", "94")) %>% 
+  bind_rows(naissances_recalculees)
+
+# Vérification
+setequal(naissances_paris %>%
+          group_by(annee) %>% 
+          summarise(total = sum(naissances)),
+        naissances_annees %>% 
+          filter(code_insee %in% c("75", "92", "93", "94")) %>% 
+          group_by(annee) %>% 
+          summarise(total = sum(naissances)))
+```
+
+    ## TRUE
+
+``` r
+ggplot(naissances_paris, aes(annee, naissances)) +
+  geom_line(aes(color = code_insee)) +
+  geom_vline(xintercept = 1968)
+```
+
+![](01_exploratory_files/figure-markdown_github/recalculHistorique-1.png)
+
+La vérification fonctionne et le graphe est plutôt cohérent. Faisons de même pour l'ancienne Seine-et-Oise et recalculons le jeux de `naissances_annees`. *Note :* Pour calculer la répartition de la population, je me suis basé sur la période de 1968 à 1998, vu que la répartition change après les années 2000 (les naissances augmentent beaucoup dans le Val d'Oise alors qu'elles diminuent dans les Yvelines).
+
+``` r
+prop_oise <- naissances_annees %>% 
+  filter(code_insee %in% c("78", "91", "95"),
+         annee >= 1968, annee <= 1998) %>% 
+  group_by(code_insee) %>% 
+  summarise(total = sum(naissances)) %>% 
+  mutate(prop = total/ sum(total)) %>% 
+  select(-total)
+
+naissances_recalculees2 <- naissances_annees %>% 
+  filter(code_insee == "78",
+         annee < 1968) %>% 
+  complete(annee, code_insee = c("78", "91", "95")) %>% 
+  fill(naissances) %>% 
+  inner_join(prop_oise, by = "code_insee") %>% 
+  mutate(naissances = prop * naissances) %>% 
+  select(-prop)
+
+naissances_oise <- naissances_annees %>% 
+  filter(annee >= 1968, code_insee %in% c("78", "91", "95")) %>% 
+  bind_rows(naissances_recalculees2)
+
+# Vérification 
+setdiff(naissances_oise %>%
+          group_by(annee) %>% 
+          summarise(total = sum(naissances)),
+        naissances_annees %>% 
+          filter(code_insee %in% c("78", "91", "95")) %>% 
+          group_by(annee) %>% 
+          summarise(total = sum(naissances)))
+```
+
+    ## # A tibble: 0 × 2
+    ## # ... with 2 variables: annee <int>, total <dbl>
+
+``` r
+ggplot(naissances_oise, aes(annee, naissances)) +
+  geom_line(aes(color = code_insee)) +
+  geom_vline(xintercept = c(1968, 1998))
+```
+
+![](01_exploratory_files/figure-markdown_github/calculHistoriqueOise-1.png)
+
+On voit une chute en 1968 que l'on n'observe pas sur le graphe de Paris. La répartition de la population des YVelines avant et après la séparation des départements ne doit pas être exacte, mais dans l'ensemble, l'interpolation ne semble pas trop mauvaise.
