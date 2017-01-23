@@ -127,10 +127,10 @@ tm_shape(france) + tm_borders()
 
 ![](01_exploratory_files/figure-markdown_github/carteFranceMetro-1.png)
 
-Lisons maintenant les données des prénoms
+Lisons maintenant les données des prénoms. L'encodage doit être précisé pour les lettres accentuées.
 
 ``` r
-prenoms <- read_tsv("dpt2015.txt")
+prenoms <- read_tsv("dpt2015.txt", locale = locale(encoding = "iso-8859-1"))
 ```
 
     ## Parsed with column specification:
@@ -175,26 +175,31 @@ table(prenoms$annais == "XXXX") # Il y a exactement le même nombre d'années de
     ## 3372275   33036
 
 ``` r
-filter(prenoms, dpt == "XX", annais != "XXXX") # Toutes les données manquantes sont sur les mêmes lignes
+nrow(filter(prenoms, dpt == "XX", annais != "XXXX")) # Toutes les données manquantes sont sur les mêmes lignes
 ```
 
-    ## # A tibble: 0 × 5
-    ## # ... with 5 variables: sexe <int>, preusuel <chr>, annais <chr>,
-    ## #   dpt <chr>, nombre <dbl>
+    ## [1] 0
 
 Les données manquantes étant sur les mêmes lignes, nous allons les supprimer, puisque nous ne pouvons pas les placer par département. Nous allons renommer les variables pour des noms moins obscurs, et nous changeons le département en code\_insee, pour pouvoir joindre les données avec la carte plus facilement.
 
 ``` r
 prenoms <- prenoms %>% 
   rename(prenom = preusuel, annee = annais, code_insee = dpt) %>% 
-  mutate(sexe = factor(sexe, levels = c(1, 2), labels = c("M", "F"))) %>% 
+  mutate(sexe = factor(sexe, levels = c(1, 2), labels = c("M", "F")),
+         annee = as.integer(annee)) %>% 
   filter(annee != "XXXX")
+```
+
+    ## Warning in eval(substitute(expr), envir, enclos): NAs introduits lors de la
+    ## conversion automatique
+
+``` r
 head(prenoms)
 ```
 
     ## # A tibble: 6 × 5
     ##     sexe prenom annee code_insee nombre
-    ##   <fctr>  <chr> <chr>      <chr>  <dbl>
+    ##   <fctr>  <chr> <int>      <chr>  <dbl>
     ## 1      M  AADIL  1983         84      3
     ## 2      M  AADIL  1992         92      3
     ## 3      M  AARON  1962         75      3
@@ -386,4 +391,78 @@ tm_shape(sp::merge(france, florian3)) +
 
 ![](01_exploratory_files/figure-markdown_github/calculPourcentage-1.png)
 
-La carte est très différente de la première version ! Le Nord disparaît, et on voit une concentration dans la région Sud-Est, ainsi qu'un gros pic en Essonne et dans le Val d'Oise.
+La carte est très différente de la première version ! Le Nord disparaît, et on voit une concentration dans la région Sud-Est, ainsi qu'un gros pic en région parisienne (hors Paris qui est quasiment blanc).
+
+``` r
+florian3 %>% arrange(-prop) %>% head(10)
+```
+
+    ## # A tibble: 10 × 4
+    ##    code_insee total naissances        prop
+    ##         <chr> <dbl>      <dbl>       <dbl>
+    ## 1          91  2309     538596 0.004287072
+    ## 2          95  2324     629388 0.003692476
+    ## 3          94  2463     760356 0.003239272
+    ## 4          84  1466     537252 0.002728701
+    ## 5          83  1817     679807 0.002672817
+    ## 6          92  2891    1089192 0.002654261
+    ## 7          93  2249     918799 0.002447761
+    ## 8          06  1881     782180 0.002404817
+    ## 9          77  2118     892659 0.002372687
+    ## 10         74  1480     628855 0.002353484
+
+On voit que la région parisienne (hors Paris) est dans le top 10. Je suis curieux de voir ce qui s'est passé dans le Nord (pourquoi n'est-il plus dans le top des proportions alors que c'était le département avec le plus de naissances en valeur absolue).
+
+``` r
+naissances_annees <- prenoms %>% 
+  group_by(code_insee, annee) %>% 
+  summarise(naissances = sum(nombre)) %>% 
+  ungroup()
+
+prenoms %>% 
+  filter(prenom == "FLORIAN", code_insee %in% c("59", "92")) %>%
+  inner_join(naissances_annees, by = c("code_insee", "annee")) %>% 
+  ggplot(aes(annee)) + 
+    geom_line(aes(y = naissances, col = code_insee))
+```
+
+![](01_exploratory_files/figure-markdown_github/courbeNaissances-1.png)
+
+Voilà l'explication ! Il n'y a pas de données pour certains départements avant environ 1970, alors que pour d'autres il y a des données depuis 1900. Cela fausse donc le total et les proportions.
+
+``` r
+prenoms %>% 
+  group_by(code_insee) %>% 
+  summarise(debut = min(annee)) %>% 
+  arrange(-debut) %>% 
+  head(10)
+```
+
+    ## # A tibble: 10 × 2
+    ##    code_insee debut
+    ##         <chr> <int>
+    ## 1          91  1968
+    ## 2          92  1968
+    ## 3          93  1968
+    ## 4          94  1968
+    ## 5          95  1968
+    ## 6          01  1900
+    ## 7          02  1900
+    ## 8          03  1900
+    ## 9          04  1900
+    ## 10         05  1900
+
+En fait les départements de la courronne parisienne ont été créés en 1968, cela explique donc l'absence de données rétroactives. D'après [la page wikipedia](https://fr.wikipedia.org/wiki/R%C3%A9organisation_de_la_r%C3%A9gion_parisienne_en_1964), les départements de la Seine (remplacé par ceux de Paris, des Hauts-de-Seine, de la Seine-Saint-Denis, et du Val-de-Marne) et de Seine-et-Oise (remplacé par ceux de l'Essonne, des Yvelines, et du Val-d'Oise) ont été supprimés. Regardons l'historique des naissances pour Paris et la région parisienne.
+
+``` r
+ggplot(naissances_annees %>% 
+         filter(code_insee %in% c("75", "78", "91", "92", "93", "94", "95")) %>% 
+         mutate(groupe = code_insee %in% c("78", "91", "95")), 
+       aes(x = annee, y = naissances, color = code_insee)) + 
+  geom_line() +
+  facet_wrap(~ groupe, scales = "free_y", ncol = 1)
+```
+
+![](01_exploratory_files/figure-markdown_github/naissancesRP-1.png)
+
+Nous allons faire un faux historique pour ces départements, à partir d'une proportion du département de Paris.
