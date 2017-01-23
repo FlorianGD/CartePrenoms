@@ -448,7 +448,11 @@ prenoms %>%
     ## 9          04  1900
     ## 10         05  1900
 
-En fait les départements de la courronne parisienne ont été créés en 1968, cela explique donc l'absence de données rétroactives. D'après [la page wikipedia](https://fr.wikipedia.org/wiki/R%C3%A9organisation_de_la_r%C3%A9gion_parisienne_en_1964), les départements de la Seine (remplacé par ceux de Paris, des Hauts-de-Seine, de la Seine-Saint-Denis, et du Val-de-Marne) et de Seine-et-Oise (remplacé par ceux de l'Essonne, des Yvelines, et du Val-d'Oise) ont été supprimés. Regardons l'historique des naissances pour Paris et la région parisienne.
+En fait les départements de la courronne parisienne ont été créés en 1968, cela explique donc l'absence de données rétroactives. D'après [la page wikipedia](https://fr.wikipedia.org/wiki/R%C3%A9organisation_de_la_r%C3%A9gion_parisienne_en_1964), les départements de la Seine (remplacé par ceux de Paris, des Hauts-de-Seine, de la Seine-Saint-Denis, et du Val-de-Marne) et de Seine-et-Oise (remplacé par ceux de l'Essonne, des Yvelines, et du Val-d'Oise) ont été supprimés.
+
+### Création d'un historique
+
+Regardons l'historique des naissances pour Paris et la région parisienne.
 
 ``` r
 ggplot(naissances_annees %>% 
@@ -551,3 +555,54 @@ ggplot(naissances_oise, aes(annee, naissances)) +
 ![](01_exploratory_files/figure-markdown_github/calculHistoriqueOise-1.png)
 
 On voit une chute en 1968 que l'on n'observe pas sur le graphe de Paris. La répartition de la population des YVelines avant et après la séparation des départements ne doit pas être exacte, mais dans l'ensemble, l'interpolation ne semble pas trop mauvaise.
+
+### Nouveau jeu de données prénoms
+
+Créons le jeu de données `naissances` dans une version qui fonctionne pour biennous, c'est à dire :
+
+-   Prenant en compte la Corse en tant que 2 départements ;
+-   Sans les données des DOM, trop difficiles à interpoler ;
+-   Recréant un historique pour les départements de la région parisienne ;
+-   Avec des noms de colonne plus simples.
+
+``` r
+exclure <- tibble(code_insee = c("75", "78", "91", "92", "93", "94", "95", "97"))
+
+naissances_histo <- naissances_annees %>% 
+  anti_join(exclure, by = "code_insee") %>% 
+  bind_rows(naissances_paris, naissances_oise)
+
+# Vérification
+t1 <- naissances_histo %>%
+  group_by(code_insee) %>% 
+  summarise(naissances = sum(naissances))
+
+t2 <- naissances %>% 
+  filter(code_insee != "97")
+
+setdiff(t1, t2) # Il n'y a que la région parisienne
+```
+
+    ## # A tibble: 7 × 2
+    ##   code_insee naissances
+    ##        <chr>      <dbl>
+    ## 1         75  3458175.3
+    ## 2         78  1230337.7
+    ## 3         91   865536.7
+    ## 4         92  2110400.1
+    ## 5         93  1780249.5
+    ## 6         94  1473253.0
+    ## 7         95  1012197.6
+
+``` r
+# Vérifions que les totaux sont les bons
+
+setequal(t1 %>% 
+          group_by(code_insee %in% c("78", "91", "95")) %>%
+          summarise(total = sum(naissances)),
+        t2 %>% 
+          group_by(code_insee %in% c("78", "91", "95")) %>%
+          summarise(total = sum(naissances)))
+```
+
+    ## TRUE
