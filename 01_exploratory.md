@@ -606,3 +606,133 @@ setequal(t1 %>%
 ```
 
     ## TRUE
+
+``` r
+write_csv(naissances_histo, "naissances.csv")
+```
+
+En fait, pour avoir des résultats cohérents, il faudrait aussi refaire l'historique pour chaque prénom des départements 75 et 78 avant 1968. Comme cela va me faire copier/coller plus de 2 fois, il est temps de faire une fonction. Pour les prénoms, il faut aussi prendre en compte le sexe, puisque certains prénoms sont mixtes. Il ne faut pas ajouter systématiquement les deux sexes, c'est pourquoi j'utilise `nesting` à l'intérieur de `complete` pour ne completer que les cas où les données sont présentes.
+
+``` r
+modifier_historique_prenoms <- function(data, code_avant, codes_apres, annee_limite, props){
+  avant <- data %>% 
+    filter(code_insee == code_avant,
+           annee < annee_limite) %>% 
+    complete(nesting(annee, prenom, sexe), code_insee = codes_apres) %>% 
+    fill(nombre) %>% 
+    inner_join(props, by = "code_insee") %>%
+    mutate(nombre = prop * nombre) %>%
+    select(-prop)
+  
+  apres <- data%>% 
+    filter(annee >= annee_limite,
+           code_insee %in% codes_apres)
+  
+  data %>% 
+    anti_join(tibble("code_insee" = codes_apres), by = "code_insee") %>% 
+    bind_rows(avant, apres) %>% 
+    arrange(annee, code_insee, sexe, prenom)
+}
+
+modifier_historique_prenoms(prenoms %>% filter(prenom == "CLAUDE"),
+                            code_avant = "78",
+                            codes_apres = c("78", "91", "95"),
+                            annee_limite = 1968,
+                            props = prop_oise)
+```
+
+    ## # A tibble: 10,602 × 5
+    ##      sexe prenom annee code_insee nombre
+    ##    <fctr>  <chr> <int>      <chr>  <dbl>
+    ## 1       M CLAUDE  1900         01     41
+    ## 2       M CLAUDE  1900         03     44
+    ## 3       M CLAUDE  1900         13     12
+    ## 4       M CLAUDE  1900         17      4
+    ## 5       M CLAUDE  1900         21      9
+    ## 6       M CLAUDE  1900         25      6
+    ## 7       M CLAUDE  1900         26      3
+    ## 8       M CLAUDE  1900         29     12
+    ## 9       M CLAUDE  1900         38      8
+    ## 10      M CLAUDE  1900         39      8
+    ## # ... with 10,592 more rows
+
+``` r
+modifier_historique_oise <- function(data){
+  prop_oise <-tibble("code_insee" = c("78", "91", "95"),
+                     "prop" = c(0.4105975, 0.2715035, 0.3178990))
+  modifier_historique_prenoms(data, code_avant = "78",
+                              codes_apres = prop_oise$code_insee,
+                              annee_limite = 1968,
+                              props = prop_oise)
+}  
+
+modifier_historique_seine <- function(data){
+  prop_seine <- tibble("code_insee" = c("75", "92", "93", "94"),
+                       "prop" = c(0.3919910, 0.2392180, 0.2017948, 0.1669961))
+  modifier_historique_prenoms(data, code_avant = "75",
+                              codes_apres = prop_seine$code_insee,
+                              annee_limite = 1968,
+                              props = prop_seine)
+}
+
+modifier_historique_corse <- function(data){
+  prop_corse <- tibble("code_insee" = c("20", "2A", "2B"),
+                       "prop" = c(0, 0.5, 0.5))
+  modifier_historique_prenoms(data, code_avant = "20",
+                              codes_apres = prop_corse$code_insee,
+                              annee_limite = 9999,
+                              props = prop_corse) %>% 
+    filter(nombre != 0)
+}
+
+modifier_historique_tous <- . %>% 
+  modifier_historique_corse() %>% 
+  modifier_historique_oise() %>% 
+  modifier_historique_seine()
+```
+
+``` r
+prenoms_recalcules <- read_tsv("dpt2015.txt", locale = locale(encoding = "iso-8859-1")) %>%
+  rename(prenom = preusuel, annee = annais, code_insee = dpt) %>% 
+  mutate(sexe = factor(sexe, levels = c(1, 2), labels = c("M", "F")),
+         annee = as.integer(annee)) %>% 
+  filter(annee != "XXXX",
+         code_insee != "97") %>%  
+  modifier_historique_tous
+```
+
+    ## Parsed with column specification:
+    ## cols(
+    ##   sexe = col_integer(),
+    ##   preusuel = col_character(),
+    ##   annais = col_character(),
+    ##   dpt = col_character(),
+    ##   nombre = col_double()
+    ## )
+
+    ## Warning in eval(substitute(expr), envir, enclos): NAs introduits lors de la
+    ## conversion automatique
+
+``` r
+inner_join(prenoms %>% 
+             filter(code_insee != "97") %>% 
+             group_by(annee) %>% 
+             summarise(total = sum(nombre)),
+           prenoms_recalcules %>% 
+             group_by(annee) %>% 
+             summarise(total_recalc = sum(nombre)),
+           by = "annee") %>% 
+  mutate(diff = total_recalc - total) %>% 
+  summarise(err = mean(diff))
+```
+
+    ## # A tibble: 1 × 1
+    ##            err
+    ##          <dbl>
+    ## 1 -0.003680123
+
+On a en moyenne une erreur de -0.004 naissance par an, qui doit provenir des erreurs d'arrondi au niveau des proportions. Cela me paraît satisfaisant, je vais sauvegarder le jeu de données pour pouvoir le réutiliser sans avoir à tout refaire.
+
+``` r
+write_csv(prenoms_recalcules, "prenoms_recalcules.csv")
+```
