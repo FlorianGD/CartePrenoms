@@ -479,7 +479,7 @@ calculer_prop <- function(Prenom, debut = 1900, fin = 2015){
     group_by(code_insee) %>%
     summarise(total = sum(nombre)) %>%
     inner_join(naissances_filtre, by = "code_insee") %>%
-    mutate(prop = total/naissances * 1000)
+    mutate(prop = total/naissances * 100)
 }
 
 ```
@@ -489,15 +489,23 @@ En fait, il existe un mode interactif dans `tmap`, qui permet de zoomer. Cela se
 ```{r nouvelle carte interactive}
 tmap_mode("view")
 
-tm_shape(sp::merge(france, calculer_prop("marcel")))+
-  tm_borders() +
-  tm_fill(col = "prop", 
-          id ="nom", 
-          popup.vars = c("code_insee", "total", "prop"),
-          title = "Pour 1000 naissances",
-          textNA = "Aucune",
-          legend.format = list("text.separator" = "à" )) +
-  tm_view(set.zoom.limits = c(5, 9), legend.position = c("left", "bottom")) +
-  tm_layout(title = str_c("Naissances de ",str_to_title("marcel"), " par département"))
+pourCent <- function(x){
+  str_c(x, "%")
+}
+
+creer_carte <- function(Prenom, debut = 1900, fin = 2015){
+  tm_shape(sp::merge(france, calculer_prop(Prenom, debut, fin))) +
+    tm_borders(alpha = 0.5) +
+    tm_fill(col = "prop", 
+            id = "nom", 
+            textNA = "Aucune",
+            title = "",
+            popup.vars = c("total", "prop"),
+            legend.format = list(fun = pourCent, text.separator = "à")) +
+    tm_view(set.zoom.limits = c(5, 9), legend.position = c("left", "bottom")) +
+    tm_layout(title = str_c(str_to_title(Prenom), " entre ", debut, " et ", fin))
+}
+
+creer_carte("roger", 1950, 2000)
 ```
 
