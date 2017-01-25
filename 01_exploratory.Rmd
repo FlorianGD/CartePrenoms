@@ -491,7 +491,13 @@ tmap_mode("view")
 
 tm_shape(sp::merge(france, calculer_prop("marcel")))+
   tm_borders() +
-  tm_fill(col = "prop", popup.vars = c("nom", "code_insee", "total", "prop")) +
-  tm_view(set.zoom.limits = c(5, 9))
+  tm_fill(col = "prop", 
+          id ="nom", 
+          popup.vars = c("code_insee", "total", "prop"),
+          title = "Pour 1000 naissances",
+          textNA = "Aucune",
+          legend.format = list("text.separator" = "à" )) +
+  tm_view(set.zoom.limits = c(5, 9), legend.position = c("left", "bottom")) +
+  tm_layout(title = str_c("Naissances de ",str_to_title("marcel"), " par département"))
 ```
 
