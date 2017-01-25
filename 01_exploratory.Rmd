@@ -371,7 +371,7 @@ setequal(t1 %>%
           group_by(code_insee %in% c("78", "91", "95")) %>%
           summarise(total = sum(naissances)))
 
-write_csv(naissances_histo, "naissances.csv")
+# write_csv(naissances_histo, "naissances.csv")
 ```
 
 En fait, pour avoir des résultats cohérents, il faudrait aussi refaire l'historique pour chaque prénom des départements 75 et 78 avant 1968. Comme cela va me faire copier/coller plus de 2 fois, il est temps de faire une fonction.
@@ -462,6 +462,36 @@ inner_join(prenoms %>%
   summarise(err = mean(diff))
 ```
 On a en moyenne une erreur de -0.004 naissance par an, qui doit provenir des erreurs d'arrondi au niveau des proportions. Cela me paraît satisfaisant, je vais sauvegarder le jeu de données pour pouvoir le réutiliser sans avoir à tout refaire.
+Nous pouvons maintenant refaire de nouveau la carte. Pour avoir le jeu de données spécifique au prénom, je vais refaire une fonction, vu que je vais copier/coller pour la 3eme fois. Je vais aussi rajouter la possibilité de choisir des dates pour lesquelles faire les proportions.
 
-```{r ecriture}
-write_csv(prenoms_recalcules, "prenoms_recalcules.csv")
+```{r Fonction calculer prop}
+# write_csv(prenoms_recalcules, "prenoms_recalcules.csv")
+
+calculer_prop <- function(Prenom, debut = 1900, fin = 2015){
+  naissances_filtre <- naissances_histo %>% 
+    filter(between(annee, debut, fin)) %>% 
+    group_by(code_insee) %>% 
+    summarise(naissances = sum(naissances))
+  
+  prenoms_recalcules %>%
+    filter(prenom == str_to_upper(Prenom),
+           between(annee, debut, fin)) %>%
+    group_by(code_insee) %>%
+    summarise(total = sum(nombre)) %>%
+    inner_join(naissances_filtre, by = "code_insee") %>%
+    mutate(prop = total/naissances * 1000)
+}
+
+```
+
+En fait, il existe un mode interactif dans `tmap`, qui permet de zoomer. Cela sera mieux pour voir la région parisienne en particulier, et permet de faire apparaître les chifres aussi.
+
+```{r nouvelle carte interactive}
+tmap_mode("view")
+
+tm_shape(sp::merge(france, calculer_prop("marcel")))+
+  tm_borders() +
+  tm_fill(col = "prop", popup.vars = c("nom", "code_insee", "total", "prop")) +
+  tm_view(set.zoom.limits = c(5, 9))
+```
+
