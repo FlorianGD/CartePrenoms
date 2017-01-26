@@ -117,10 +117,12 @@ creer_carte <- function(Prenom, debut = 1900, fin = 2015){
             title = "En %",
             popup.vars = c("total", "prop"),
             legend.format = list(text.separator = "à")) +
-    tm_view(set.zoom.limits = c(5, 9), legend.position = c("left", "bottom")) +
-    tm_layout(title = str_c(str_to_title(Prenom), " entre ", debut, " et ", fin))
+    tm_view(set.zoom.limits = c(5, 9), 
+            legend.position = c("left", "bottom"),
+            set.bounds = c(-7.142238, 39.33323, 11.560364, 53.08984))
 }
 
+creer_carte("florian")
 
 creer_histogramme <- function(Prenom, debut = 1900, fin = 2015){
 # Créer un histogramme du nombre de naissances par an d'un prénom
@@ -134,7 +136,7 @@ creer_histogramme <- function(Prenom, debut = 1900, fin = 2015){
     summarise(total = sum(nombre)) %>% 
     ggplot(aes(x = annee, y = total)) +
       geom_col(alpha = 0.7, fill = "tomato", color = "tomato2") +
-      ggtitle(str_c("Naissances des ", str_to_title(Prenom), " en France")) +
+      ggtitle(str_c("Pour toute la France")) +
       theme(axis.title = element_blank(),
             panel.background = element_blank())
 }
