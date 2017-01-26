@@ -7,7 +7,9 @@ library(raster)
 library(stringr)
 library(dplyr)
 library(tidyr)
+library(ggplot2)
 
+### Fonctions pour créer le jeu de données modifié
 modifier_historique_prenoms <- function(data, code_avant, annee_limite, props){
 # Rajoute des valeurs pour des départements non présents avant une certaine annee
 # Renvoie le jeu de données data modifié
@@ -81,6 +83,7 @@ modifier_historique_tous <- function(data) {
     modifier_historique_seine()
 }
 
+### Fonctions pour afficher la carte des prénoms
 calculer_prop <- function(Prenom, debut = 1900, fin = 2015){
 # Calule la proportion d'un prénom parmi toutes les naissances par département
 # entre les années debut et fin (optionnel)
@@ -116,4 +119,22 @@ creer_carte <- function(Prenom, debut = 1900, fin = 2015){
             legend.format = list(text.separator = "à")) +
     tm_view(set.zoom.limits = c(5, 9), legend.position = c("left", "bottom")) +
     tm_layout(title = str_c(str_to_title(Prenom), " entre ", debut, " et ", fin))
+}
+
+
+creer_histogramme <- function(Prenom, debut = 1900, fin = 2015){
+# Créer un histogramme du nombre de naissances par an d'un prénom
+#
+# Nécessite le jeu de données prenoms dans l'environnement global
+  
+  prenoms %>% 
+    filter(prenom == str_to_upper(Prenom),
+           between(annee, debut, fin)) %>% 
+    group_by(annee) %>% 
+    summarise(total = sum(nombre)) %>% 
+    ggplot(aes(x = annee, y = total)) +
+      geom_col(alpha = 0.7, fill = "tomato", color = "tomato2") +
+      ggtitle(str_c("Naissances des ", str_to_title(Prenom), " en France")) +
+      theme(axis.title = element_blank(),
+            panel.background = element_blank())
 }
