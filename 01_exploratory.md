@@ -51,11 +51,11 @@ library(grid)
 J'ai choisi de récupérer les données de 2014 simplifiées à 100m, qui sont moins lourdes à traiter que les données de 2017 non simplifiées.
 
 ``` r
-france <- readOGR("departements", "departements-20140306-100m", stringsAsFactors = FALSE, use_iconv = TRUE, encoding = "iso-8859-1")
+france <- readOGR("data/original/departements", "departements-20140306-100m", stringsAsFactors = FALSE, use_iconv = TRUE, encoding = "iso-8859-1")
 ```
 
     ## OGR data source with driver: ESRI Shapefile 
-    ## Source: "departements", layer: "departements-20140306-100m"
+    ## Source: "data/original/departements", layer: "departements-20140306-100m"
     ## with 101 features
     ## It has 4 fields
 
@@ -130,7 +130,7 @@ tm_shape(france) + tm_borders()
 Lisons maintenant les données des prénoms. L'encodage doit être précisé pour les lettres accentuées.
 
 ``` r
-prenoms <- read_tsv("dpt2015.txt", locale = locale(encoding = "iso-8859-1"))
+prenoms <- read_tsv("data/original/dpt2015.txt", locale = locale(encoding = "iso-8859-1"))
 ```
 
     ## Parsed with column specification:
@@ -291,11 +291,11 @@ Autre approche pour les graphes
 Plutôt que de supprimer les données, peut être est-il utile de "facetter" les régions que l'on ne voit pas (DOM et région parisienne) ?
 
 ``` r
-france2 <- readOGR("departements", "departements-20140306-100m", stringsAsFactors = FALSE, use_iconv = TRUE, encoding = "iso-8859-1")
+france2 <- readOGR("data/original/departements", "departements-20140306-100m", stringsAsFactors = FALSE, use_iconv = TRUE, encoding = "iso-8859-1")
 ```
 
     ## OGR data source with driver: ESRI Shapefile 
-    ## Source: "departements", layer: "departements-20140306-100m"
+    ## Source: "data/original/departements", layer: "departements-20140306-100m"
     ## with 101 features
     ## It has 4 fields
 
@@ -608,7 +608,7 @@ setequal(t1 %>%
     ## TRUE
 
 ``` r
-write_csv(naissances_histo, "naissances.csv")
+# write_csv(naissances_histo, "data/recalc/naissances.csv")
 ```
 
 En fait, pour avoir des résultats cohérents, il faudrait aussi refaire l'historique pour chaque prénom des départements 75 et 78 avant 1968. Comme cela va me faire copier/coller plus de 2 fois, il est temps de faire une fonction. Pour les prénoms, il faut aussi prendre en compte le sexe, puisque certains prénoms sont mixtes. Il ne faut pas ajouter systématiquement les deux sexes, c'est pourquoi j'utilise `nesting` à l'intérieur de `complete` pour ne completer que les cas où les données sont présentes.
@@ -691,8 +691,10 @@ modifier_historique_tous <- . %>%
   modifier_historique_seine()
 ```
 
+Reprenons maintenant depuis le début
+
 ``` r
-prenoms_recalcules <- read_tsv("dpt2015.txt", locale = locale(encoding = "iso-8859-1")) %>%
+prenoms_recalcules <- read_tsv("data/original/dpt2015.txt", locale = locale(encoding = "iso-8859-1")) %>%
   rename(prenom = preusuel, annee = annais, code_insee = dpt) %>% 
   mutate(sexe = factor(sexe, levels = c(1, 2), labels = c("M", "F")),
          annee = as.integer(annee)) %>% 
@@ -731,8 +733,48 @@ inner_join(prenoms %>%
     ##          <dbl>
     ## 1 -0.003680123
 
-On a en moyenne une erreur de -0.004 naissance par an, qui doit provenir des erreurs d'arrondi au niveau des proportions. Cela me paraît satisfaisant, je vais sauvegarder le jeu de données pour pouvoir le réutiliser sans avoir à tout refaire.
+On a en moyenne une erreur de -0.004 naissance par an, qui doit provenir des erreurs d'arrondi au niveau des proportions. Cela me paraît satisfaisant, je vais sauvegarder le jeu de données pour pouvoir le réutiliser sans avoir à tout refaire. Nous pouvons maintenant refaire de nouveau la carte. Pour avoir le jeu de données spécifique au prénom, je vais refaire une fonction, vu que je vais copier/coller pour la 3eme fois. Je vais aussi rajouter la possibilité de choisir des dates pour lesquelles faire les proportions.
 
 ``` r
-write_csv(prenoms_recalcules, "prenoms_recalcules.csv")
+# write_csv(prenoms_recalcules, "data/recalc/prenoms_recalcules.csv")
+
+calculer_prop <- function(Prenom, debut = 1900, fin = 2015){
+  naissances_filtre <- naissances_histo %>% 
+    filter(between(annee, debut, fin)) %>% 
+    group_by(code_insee) %>% 
+    summarise(naissances = sum(naissances))
+  
+  prenoms_recalcules %>%
+    filter(prenom == str_to_upper(Prenom),
+           between(annee, debut, fin)) %>%
+    group_by(code_insee) %>%
+    summarise(total = sum(nombre)) %>%
+    inner_join(naissances_filtre, by = "code_insee") %>%
+    mutate(prop = total/naissances * 100)
+}
 ```
+
+En fait, il existe un mode interactif dans `tmap`, qui permet de zoomer. Cela sera mieux pour voir la région parisienne en particulier, et permet de faire apparaître les chifres aussi.
+
+``` r
+# tmap_mode("view")
+
+creer_carte <- function(Prenom, debut = 1900, fin = 2015){
+  data <- sp::merge(france, calculer_prop(Prenom, debut, fin))
+  data$nom_dept <- str_c(data$nom, data$code_insee, sep = ", ")
+  tm_shape(data) +
+    tm_borders(alpha = 0.5) +
+    tm_fill(col = "prop", 
+            id = "nom_dept", 
+            textNA = "Aucune",
+            title = "En %",
+            popup.vars = c("total", "prop"),
+            legend.format = list(text.separator = "à")) +
+    tm_view(set.zoom.limits = c(5, 9), legend.position = c("left", "bottom")) +
+    tm_layout(title = str_c(str_to_title(Prenom), " entre ", debut, " et ", fin))
+}
+
+creer_carte("roger", 1950, 2000)
+```
+
+![](01_exploratory_files/figure-markdown_github/nouvelle%20carte%20interactive-1.png)

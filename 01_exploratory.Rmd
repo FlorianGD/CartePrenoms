@@ -25,7 +25,7 @@ library(grid)
 J'ai choisi de récupérer les données de 2014 simplifiées à 100m, qui sont moins lourdes à traiter que les données de 2017 non simplifiées.
 
 ```{r lecture données, echo=TRUE}
-france <- readOGR("departements", "departements-20140306-100m", stringsAsFactors = FALSE, use_iconv = TRUE, encoding = "iso-8859-1")
+france <- readOGR("data/original/departements", "departements-20140306-100m", stringsAsFactors = FALSE, use_iconv = TRUE, encoding = "iso-8859-1")
 france
 head(france@data)
 str(france@data)
@@ -49,7 +49,7 @@ tm_shape(france) + tm_borders()
 Lisons maintenant les données des prénoms. L'encodage doit être précisé pour les lettres accentuées.
 
 ```{r lecturePrenoms}
-prenoms <- read_tsv("dpt2015.txt", locale = locale(encoding = "iso-8859-1"))
+prenoms <- read_tsv("data/original/dpt2015.txt", locale = locale(encoding = "iso-8859-1"))
 head(prenoms)
 ```
 
@@ -136,7 +136,7 @@ J'ai modifié la légende manuellement pour avoir la même que sur la carte de t
 Plutôt que de supprimer les données, peut être est-il utile de "facetter" les régions que l'on ne voit pas (DOM et région parisienne) ?
 
 ```{r facets}
-france2 <- readOGR("departements", "departements-20140306-100m", stringsAsFactors = FALSE, use_iconv = TRUE, encoding = "iso-8859-1")
+france2 <- readOGR("data/original/departements", "departements-20140306-100m", stringsAsFactors = FALSE, use_iconv = TRUE, encoding = "iso-8859-1")
 
 france2$facet <- "Métropole"
 france2$facet[france2$code_insee %in% c(c("75", "92", "93", "94"))] <- "Paris"
@@ -371,7 +371,7 @@ setequal(t1 %>%
           group_by(code_insee %in% c("78", "91", "95")) %>%
           summarise(total = sum(naissances)))
 
-# write_csv(naissances_histo, "naissances.csv")
+# write_csv(naissances_histo, "data/recalc/naissances.csv")
 ```
 
 En fait, pour avoir des résultats cohérents, il faudrait aussi refaire l'historique pour chaque prénom des départements 75 et 78 avant 1968. Comme cela va me faire copier/coller plus de 2 fois, il est temps de faire une fonction.
@@ -442,7 +442,7 @@ modifier_historique_tous <- . %>%
 Reprenons maintenant depuis le début
 
 ``` {r}
-prenoms_recalcules <- read_tsv("dpt2015.txt", locale = locale(encoding = "iso-8859-1")) %>%
+prenoms_recalcules <- read_tsv("data/original/dpt2015.txt", locale = locale(encoding = "iso-8859-1")) %>%
   rename(prenom = preusuel, annee = annais, code_insee = dpt) %>% 
   mutate(sexe = factor(sexe, levels = c(1, 2), labels = c("M", "F")),
          annee = as.integer(annee)) %>% 
@@ -465,7 +465,7 @@ On a en moyenne une erreur de -0.004 naissance par an, qui doit provenir des err
 Nous pouvons maintenant refaire de nouveau la carte. Pour avoir le jeu de données spécifique au prénom, je vais refaire une fonction, vu que je vais copier/coller pour la 3eme fois. Je vais aussi rajouter la possibilité de choisir des dates pour lesquelles faire les proportions.
 
 ```{r Fonction calculer prop}
-# write_csv(prenoms_recalcules, "prenoms_recalcules.csv")
+# write_csv(prenoms_recalcules, "data/recalc/prenoms_recalcules.csv")
 
 calculer_prop <- function(Prenom, debut = 1900, fin = 2015){
   naissances_filtre <- naissances_histo %>% 
@@ -487,21 +487,19 @@ calculer_prop <- function(Prenom, debut = 1900, fin = 2015){
 En fait, il existe un mode interactif dans `tmap`, qui permet de zoomer. Cela sera mieux pour voir la région parisienne en particulier, et permet de faire apparaître les chifres aussi.
 
 ```{r nouvelle carte interactive}
-tmap_mode("view")
-
-pourCent <- function(x){
-  str_c(x, "%")
-}
+# tmap_mode("view")
 
 creer_carte <- function(Prenom, debut = 1900, fin = 2015){
-  tm_shape(sp::merge(france, calculer_prop(Prenom, debut, fin))) +
+  data <- sp::merge(france, calculer_prop(Prenom, debut, fin))
+  data$nom_dept <- str_c(data$nom, data$code_insee, sep = ", ")
+  tm_shape(data) +
     tm_borders(alpha = 0.5) +
     tm_fill(col = "prop", 
-            id = "nom", 
+            id = "nom_dept", 
             textNA = "Aucune",
-            title = "",
+            title = "En %",
             popup.vars = c("total", "prop"),
-            legend.format = list(fun = pourCent, text.separator = "à")) +
+            legend.format = list(text.separator = "à")) +
     tm_view(set.zoom.limits = c(5, 9), legend.position = c("left", "bottom")) +
     tm_layout(title = str_c(str_to_title(Prenom), " entre ", debut, " et ", fin))
 }
