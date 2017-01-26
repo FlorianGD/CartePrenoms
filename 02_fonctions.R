@@ -1,5 +1,12 @@
 # Fonctions utilises pour recalculer les donnees et les traiter
 
+library(sp)
+library(rgdal)
+library(tmap)
+library(raster)
+library(stringr)
+library(tidyverse)
+
 modifier_historique_prenoms <- function(data, code_avant, annee_limite, props){
 # Rajoute des valeurs pour des départements non présents avant une certaine annee
 # Renvoie le jeu de données data modifié
