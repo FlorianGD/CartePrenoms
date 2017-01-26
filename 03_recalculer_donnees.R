@@ -14,6 +14,13 @@ prenoms_recalcules <- read_tsv("data/original/dpt2015.txt", locale = locale(enco
 
 write_csv(prenoms_recalcules, "data/recalc/prenoms_recalcules.csv")
 
+naissances <- prenoms_recalcules %>%
+  group_by(code_insee, annee) %>% 
+  summarise(naissances = sum(nombre)) %>% 
+  ungroup()
+
+write_csv(naissances, "data/recalc/naissances.csv")
+
 #### Données carte ####
 
 france <- readOGR("data/original/departements", "departements-20140306-100m", 

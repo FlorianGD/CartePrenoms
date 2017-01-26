@@ -84,9 +84,9 @@ calculer_prop <- function(Prenom, debut = 1900, fin = 2015){
 # Calule la proportion d'un prénom parmi toutes les naissances par département
 # entre les années debut et fin (optionnel)
 #  
-# Nécessite dans l'environnement global naissances_histo et prenoms_recalcules 
+# Nécessite dans l'environnement global naissances et prenoms_recalcules 
   
-  naissances_filtre <- naissances_histo %>% 
+  naissances_filtre <- naissances %>% 
     filter(between(annee, debut, fin)) %>% 
     group_by(code_insee) %>% 
     summarise(naissances = sum(naissances))
