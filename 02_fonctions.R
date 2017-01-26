@@ -106,7 +106,7 @@ creer_carte <- function(Prenom, debut = 1900, fin = 2015){
 # Nécessite un jeu de données spatiales france dans l'environnement global
   
   data <- sp::merge(france, calculer_prop(Prenom, debut, fin))
-  data$nom_dept <- str_c(data$nom, data$code_insee, sep = ", ")
+  
   tm_shape(data) +
     tm_borders(alpha = 0.5) +
     tm_fill(col = "prop", 
