@@ -5,7 +5,8 @@ library(rgdal)
 library(tmap)
 library(raster)
 library(stringr)
-library(tidyverse)
+library(dplyr)
+library(tidyr)
 
 modifier_historique_prenoms <- function(data, code_avant, annee_limite, props){
 # Rajoute des valeurs pour des départements non présents avant une certaine annee
@@ -75,9 +76,9 @@ modifier_historique_corse <- function(data){
 
 modifier_historique_tous <- function(data) {
   data %>% 
-  modifier_historique_corse() %>% 
-  modifier_historique_oise() %>% 
-  modifier_historique_seine()
+    modifier_historique_corse() %>% 
+    modifier_historique_oise() %>% 
+    modifier_historique_seine()
 }
 
 calculer_prop <- function(Prenom, debut = 1900, fin = 2015){
@@ -104,10 +105,8 @@ creer_carte <- function(Prenom, debut = 1900, fin = 2015){
 # Créer une carte de la proportion d'un prénom par département
 # 
 # Nécessite un jeu de données spatiales france dans l'environnement global
-  
-  data <- sp::merge(france, calculer_prop(Prenom, debut, fin))
-  
-  tm_shape(data) +
+
+  tm_shape(sp::merge(france, calculer_prop(Prenom, debut, fin))) +
     tm_borders(alpha = 0.5) +
     tm_fill(col = "prop", 
             id = "nom_dept", 
