@@ -49,7 +49,6 @@ modifier_historique_seine <- function(data){
                        "prop" = c(0.4, 0.2, 0.2, 0.2))
   
   modifier_historique_prenoms(data, code_avant = "75",
-                              codes_apres = prop$code_insee,
                               annee_limite = 1968,
                               props = prop)
 }
