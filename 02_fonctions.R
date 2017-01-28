@@ -8,6 +8,7 @@ library(stringr)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(forcats)
 
 ### Fonctions pour créer le jeu de données modifié
 modifier_historique_prenoms <- function(data, code_avant, annee_limite, props){
@@ -114,15 +115,12 @@ creer_carte <- function(Prenom, debut = 1900, fin = 2015){
     tm_fill(col = "prop", 
             id = "nom_dept", 
             textNA = "Aucune",
-            title = "En %",
+            title = "Proportion (%)",
             popup.vars = c("total", "prop"),
             legend.format = list(text.separator = "à")) +
     tm_view(set.zoom.limits = c(5, 9), 
-            legend.position = c("left", "bottom"),
-            set.bounds = c(-7.142238, 39.33323, 11.560364, 53.08984))
+            legend.position = c("left", "bottom"))
 }
-
-creer_carte("florian")
 
 creer_histogramme <- function(Prenom, debut = 1900, fin = 2015){
 # Créer un histogramme du nombre de naissances par an d'un prénom
@@ -136,7 +134,26 @@ creer_histogramme <- function(Prenom, debut = 1900, fin = 2015){
     summarise(total = sum(nombre)) %>% 
     ggplot(aes(x = annee, y = total)) +
       geom_col(alpha = 0.7, fill = "tomato", color = "tomato2") +
-      ggtitle(str_c("Pour toute la France")) +
+      ggtitle(str_c("Nombre total en France")) +
       theme(axis.title = element_blank(),
             panel.background = element_blank())
 }
+
+
+creer_top_dept <- function(Prenom, debut = 1900, fin = 2015){
+  
+  prenoms %>%
+    filter(prenom == str_to_upper(Prenom),
+         between(annee, debut, fin)) %>% 
+    group_by(code_insee) %>% 
+    summarise(total = sum(nombre)) %>% 
+    inner_join(france@data, by = "code_insee") %>% 
+    mutate(depart = fct_reorder(nom_dept, total)) %>% 
+    top_n(5, total) %>% 
+    ggplot(aes(x = depart, y = total)) +
+      geom_col(alpha = 0.7, fill = "coral", color = "coral2") +
+      coord_flip() +
+    ggtitle(str_c("Top 5 des départements")) +
+    theme(axis.title = element_blank(),
+          panel.background = element_blank())
+}  
