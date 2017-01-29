@@ -139,6 +139,29 @@ creer_histogramme <- function(Prenom, debut = 1900, fin = 2015){
             panel.background = element_blank())
 }
 
+creer_histogramme_prop <- function(Prenom, debut = 1900, fin = 2015){
+  # Créer un histogramme des proportions de naissance par an d'un prénom
+  #
+  # Nécessite le jeu de données prenoms dans l'environnement global
+  # Nécessite le jeu de données naissances dans l'environnement global
+  naissances_filtre <- naissances %>% 
+    filter(between(annee, debut, fin)) %>% 
+    group_by(annee) %>% 
+    summarise(naissances = sum(naissances))
+  
+  prenoms %>% 
+    filter(prenom == str_to_upper(Prenom),
+           between(annee, debut, fin)) %>% 
+    group_by(annee) %>% 
+    summarise(total = sum(nombre)) %>% 
+    inner_join(naissances_filtre, by = "annee") %>% 
+    mutate(prop = total / naissances) %>% 
+    ggplot(aes(x = annee, y = prop)) +
+    geom_col(alpha = 0.7, fill = "tomato", color = "tomato2") +
+    ggtitle(str_c("Proportion par an")) +
+    theme(axis.title = element_blank(),
+          panel.background = element_blank())
+}
 
 creer_top_dept <- function(Prenom, debut = 1900, fin = 2015){
   
