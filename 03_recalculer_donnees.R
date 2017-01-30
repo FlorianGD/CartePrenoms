@@ -31,7 +31,7 @@ france <- readOGR("data/original/departements", "departements-20140306-100m",
 france <- france[str_length(france$code_insee) == 2, ]
 
 # Créer un champ département qui concatène le nom et le code
-france$nom_dept <- str_c(france$nom, france$code_insee, sep = ", ")
+france$nom_dept <- str_c(france$nom, " (", france$code_insee, ")")
 
 # écriture des données
 writeOGR(france, "data/recalc/departements", "departements-20140306-100m",
