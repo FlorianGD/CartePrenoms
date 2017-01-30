@@ -17,7 +17,7 @@ L'application en elle même a été fortement inspirée par la carte [SuperZip E
 ## Fonctionnement
 Le prénom saisi est cherché dans la base de données. S'il n'est pas trouvé, un message d'erreur apparaît (peut être amélioré, pour l'instant l'erreur apparaît telle qu'elle et le message n'est pas très significatif). Il est possible de faire bouger le curseur pour choisir un intervalle sur lequel faire les statistique. Les boutons radio permettent de basculer entre un affichage du pourcentage de naissance par département ayant ce prénom et le nombre de naissances par département ayant ce prénom.
 
-![Exemple](Images/Capture.png)
+![Exemple](Images/Capture.jpg)
 ## Améliorations
 On pourrait améliorer la gestion de l'erreur si une recherche ne donne pas de résultats.
 L'information disponible sur les popup pourrait être améliorée, mais je n'ai pas trouvé comment modifier les noms des variables (autrement qu'en renommant le fichier de données), ou comment utiliser `leaflet::addPopups` après avoir créé les popups dans `tmap::tm_fill`.
