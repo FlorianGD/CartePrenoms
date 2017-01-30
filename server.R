@@ -8,7 +8,8 @@ function(input, output, session) {
       creer_carte(input$prenom, input$dates[1], input$dates[2],
                   remplissage = input$choix)
       )
-    carte
+    carte %>% 
+      clearBounds()
     })
   
   output$histogramme <- renderPlot({
