@@ -1,0 +1,26 @@
+###Descriptif du contenu des fichiers "departements"
+
+**Origine**
+
+Les données sont en accès libre sur la plateforme [open data du gouvernement français](https://www.data.gouv.fr/fr/datasets/contours-des-departements-francais-issus-d-openstreetmap/).
+Les données sont issues d'OpenStreetMap, et sont donc "© les contributeurs d'OpenStreetMap sous licence ODbL".
+Plus d'infos: http://openstreetmap.fr/36680-communes
+
+**Format**
+
+Ces fichiers sont proposés au format shapefile, en projection WGS84 au niveau de détail "simplification à 100m".
+
+La topologie est conservée lors du processus de simplification (cf: http://openstreetmap.fr/blogs/cquest/limites-administratives-simplifiees)
+
+**Contenu**
+
+Ces fichiers contiennent l'ensemble des départements français, hors compris les DOM et Mayotte.
+
+Pour chaque région, les attributs suivants sont ajoutés:
+
+- code_insee: code INSEE à 2 caractères du département (ex: 01, 2A)
+- nom: nom du département (ex: Ain, Corse-du-Sud)
+- nuts3: code européen NUTS3 correspondant au départmenet (ex: FR711, FR831)
+- wikipedia: entrée wikipédia (code langue suivi du nom de l'article)
+- nom_dept: nom et code du département sous la forme "nom (code_insee)".
+
