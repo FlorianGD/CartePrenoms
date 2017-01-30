@@ -155,17 +155,19 @@ creer_histogramme_prop <- function(Prenom, debut = 1900, fin = 2015){
     group_by(annee) %>% 
     summarise(total = sum(nombre)) %>% 
     inner_join(naissances_filtre, by = "annee") %>% 
-    mutate(prop = total / naissances) %>% 
+    mutate(prop = total / naissances * 100) %>% 
     ggplot(aes(x = annee, y = prop)) +
     geom_col(alpha = 0.7, fill = "tomato", color = "tomato2") +
-    ggtitle(str_c("Proportion par an")) +
+    ggtitle(str_c("Proportion par an (%)")) +
     theme(axis.title = element_blank(),
           panel.background = element_blank())
 }
 
 creer_top_dept <- function(Prenom, debut = 1900, fin = 2015){
-  
-  prenoms %>%
+  # Créer un histogramme contenant les 5 premiers départements
+  # avec le plus de ~Prenom entre ~debut et ~fin.
+  # Nécessite le jeu de données prenoms dans l'environnement global
+    prenoms %>%
     filter(prenom == str_to_upper(Prenom),
          between(annee, debut, fin)) %>% 
     group_by(code_insee) %>% 
@@ -176,7 +178,25 @@ creer_top_dept <- function(Prenom, debut = 1900, fin = 2015){
     ggplot(aes(x = depart, y = total)) +
       geom_col(alpha = 0.7, fill = "coral", color = "coral2") +
       coord_flip() +
-    ggtitle(str_c("Top 5 des départements")) +
+    ggtitle(str_c("Top 5 des départements (nombre de naissances)")) +
     theme(axis.title = element_blank(),
           panel.background = element_blank())
+}  
+
+creer_top_dept_prop <- function(Prenom, debut = 1900, fin = 2015){
+  # Créer un histogramme contenant les 5 premiers départements
+  # avec le plus de proportion de ~Prenom entre ~debut et ~fin.
+  # Nécessite le jeu de données prenoms dans l'environnement global
+  # Nécessite le jeu de données naissances dans l'environnement global
+  
+  calculer_prop(Prenom, debut, fin) %>% 
+    inner_join(france@data, by = "code_insee") %>% 
+    mutate(depart = fct_reorder(nom_dept, prop)) %>% 
+    top_n(5, prop) %>% 
+    ggplot(aes(x = depart, y = prop)) +
+      geom_col(alpha = 0.7, fill = "coral", color = "coral2") +
+      coord_flip() +
+      ggtitle(str_c("Top 5 des départements (% des naissances)")) +
+      theme(axis.title = element_blank(),
+            panel.background = element_blank())
 }  
