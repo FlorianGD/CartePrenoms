@@ -114,10 +114,13 @@ creer_carte <- function(Prenom, debut = 1900, fin = 2015, remplissage = "prop"){
     tm_borders(alpha = 0.5) +
     tm_fill(col = remplissage, 
             id = "nom_dept", 
+            title = switch(remplissage,
+                           "prop" = "En %",
+                           "total" = "Nombre"),
             textNA = "Aucune",
-            title = "Proportion (%)",
             popup.vars = c("total", "prop"),
-            legend.format = list(text.separator = "à")) +
+            legend.format = list(text.separator = "à",
+                                 big.mark = "")) +
     tm_view(set.zoom.limits = c(5, 9), 
             legend.position = c("left", "bottom"))
 }
