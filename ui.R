@@ -21,6 +21,9 @@ fluidPage(
                     textInput("prenom", "Prénom", "Florian"),
                     sliderInput("dates", "Dates", 1900, 2015,
                                 value = c(1900, 2015), step = 1, sep =""),
+                    radioButtons("choix", NULL, 
+                                 c("Proportion de naissances" = "prop",
+                                   "Nombre de naissances" = "total")),
                     
                     plotOutput("histogramme", height = 200),
                     

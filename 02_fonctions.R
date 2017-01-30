@@ -105,14 +105,14 @@ calculer_prop <- function(Prenom, debut = 1900, fin = 2015){
     mutate(prop = total/naissances * 100)
 }
 
-creer_carte <- function(Prenom, debut = 1900, fin = 2015){
-# Créer une carte de la proportion d'un prénom par département
-# 
+creer_carte <- function(Prenom, debut = 1900, fin = 2015, remplissage = "prop"){
+# Créer une carte d'un prénom par département, le remplissage par défaut
+# est la proportion des naissances.
 # Nécessite un jeu de données spatiales france dans l'environnement global
 
   tm_shape(sp::merge(france, calculer_prop(Prenom, debut, fin))) +
     tm_borders(alpha = 0.5) +
-    tm_fill(col = "prop", 
+    tm_fill(col = remplissage, 
             id = "nom_dept", 
             textNA = "Aucune",
             title = "Proportion (%)",
@@ -178,7 +178,7 @@ creer_top_dept <- function(Prenom, debut = 1900, fin = 2015){
     ggplot(aes(x = depart, y = total)) +
       geom_col(alpha = 0.7, fill = "coral", color = "coral2") +
       coord_flip() +
-    ggtitle(str_c("Top 5 des départements (nombre de naissances)")) +
+    ggtitle(str_c("Top 5 des départements\n(nombre de naissances)")) +
     theme(axis.title = element_blank(),
           panel.background = element_blank())
 }  
@@ -196,7 +196,7 @@ creer_top_dept_prop <- function(Prenom, debut = 1900, fin = 2015){
     ggplot(aes(x = depart, y = prop)) +
       geom_col(alpha = 0.7, fill = "coral", color = "coral2") +
       coord_flip() +
-      ggtitle(str_c("Top 5 des départements (% des naissances)")) +
+      ggtitle(str_c("Top 5 des départements\n(% des naissances)")) +
       theme(axis.title = element_blank(),
             panel.background = element_blank())
 }  
