@@ -1,6 +1,7 @@
 # CartePrenoms
 
 Le but est de fournir une carte de France des naissances pour un prénom donné, par département.
+L'application avec la carte interactive peut être testée [ici](https://floriangd.shinyapps.io/CartePrenoms/).
 
 ## Données
 Les données proviennet de la plateforme [open data du gouvernement français](https://www.data.gouv.fr/fr/datasets/contours-des-departements-francais-issus-d-openstreetmap/).
