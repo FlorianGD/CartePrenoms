@@ -88,6 +88,7 @@ prenoms_recalcules <- read_tsv("data/original/dpt2015.txt", locale = locale(enco
   modifier_historique_tous
 
 write_csv(prenoms_recalcules, "data/recalc/prenoms_recalcules.csv")
+saveRDS(prenoms_recalcules, "data/recalc/prenoms.rds")
 
 naissances <- prenoms_recalcules %>%
   group_by(code_insee, annee) %>% 
@@ -95,6 +96,7 @@ naissances <- prenoms_recalcules %>%
   ungroup()
 
 write_csv(naissances, "data/recalc/naissances.csv")
+saveRDS(naissances, "data/recalc/naissances.rds")
 
 #### Données carte ####
 
