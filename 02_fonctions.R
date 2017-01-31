@@ -122,7 +122,7 @@ creer_carte <- function(Prenom, debut = 1900, fin = 2015, remplissage = "prop"){
             legend.format = list(text.separator = "à",
                                  big.mark = "")) +
     tm_view(set.zoom.limits = c(5, 9), 
-            legend.position = c("left", "bottom"))
+            legend.position = c("left", "top"))
 }
 
 creer_histogramme <- function(Prenom, debut = 1900, fin = 2015){
