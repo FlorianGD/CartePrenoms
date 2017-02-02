@@ -20,8 +20,9 @@ Le prénom saisi est cherché dans la base de données. S'il n'est pas trouvé, 
 
 ![Exemple](Images/Capture.jpg)
 ## Améliorations
-On pourrait améliorer la gestion de l'erreur si une recherche ne donne pas de résultats.  
-~~L'information disponible sur les popup pourrait être améliorée, mais je n'ai pas trouvé comment modifier les noms des variables (autrement qu'en renommant le fichier de données), ou comment utiliser `leaflet::addPopups` après avoir créé les popups dans `tmap::tm_fill`.~~ Amélioration des popups faite, mais avec une méthode "hackish" (voir [Stackoverflow](http://stackoverflow.com/questions/41940403/popup-on-a-shape-using-tmap)).  
-La carte pourrait être mieux centrée à l'ouverture.
+
+* On pourrait améliorer la gestion de l'erreur si une recherche ne donne pas de résultats.  
+* ~~L'information disponible sur les popup pourrait être améliorée, mais je n'ai pas trouvé comment modifier les noms des variables (autrement qu'en renommant le fichier de données), ou comment utiliser `leaflet::addPopups` après avoir créé les popups dans `tmap::tm_fill`.~~ Amélioration des popups faite, mais avec une méthode "hackish" (voir [Stackoverflow](http://stackoverflow.com/questions/41940403/popup-on-a-shape-using-tmap)).  
+* La carte pourrait être mieux centrée à l'ouverture.
 
 N'hésitez pas à réutiliser ces données !
