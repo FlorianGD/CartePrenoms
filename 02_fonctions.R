@@ -46,12 +46,31 @@ creer_carte <- function(Prenom, debut = 1900, fin = 2015, remplissage = "prop"){
             textNA = "Aucune",
             popup.vars = c("total", "prop"),
             legend.format = list(text.separator = "à",
-                                 big.mark = "")) +
+                                 big.mark = "",
+                                 decimal.mark = ",")) +
     tm_view(set.zoom.limits = c(5, 9), 
             legend.position = c("left", "top"))
 }
 
-
+ameliorer_popup <- function(carte){
+  # Améliore les popup. Pour l'instant, plutôt un "hack", d'autres
+  # fonctionnalités de tmap devraient venir
+  leafmap <- tmap_leaflet(carte)
+  
+  leafmap$x$calls[[4]]$args[[5]] <- leaflet:::evalFormula(
+    ~paste0(
+      "<div style=\"max-height:10em;overflow:auto;\"><table>\n
+      \t\t\t   <thead><tr><th colspan=\"2\"><b>", nom_dept, "</b></th></thead></tr>
+      <tr><td style=\"color: #888888;\"> Total :&nbsp; </td><td>", round(total), "</td></tr>
+      <tr><td style=\"color: #888888;\"> Proportion :&nbsp; </td><td>", 
+      formatC(prop, digits = 3, decimal.mark = ",") ,"</td></tr>
+      </table></div>"
+    ),
+    data=carte$tm_shape$shp@data
+    )
+  
+  leafmap
+}
 #### Fonctions pour les graphes du paneau
 creer_histogramme <- function(Prenom, debut = 1900, fin = 2015){
 # Créer un histogramme du nombre de naissances par an d'un prénom

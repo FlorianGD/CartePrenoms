@@ -4,7 +4,7 @@ function(input, output, session) {
 
   output$map <- renderLeaflet({
 
-    carte <- tmap_leaflet(
+    carte <- ameliorer_popup(
       creer_carte(input$prenom, input$dates[1], input$dates[2],
                   remplissage = input$choix)
       )
