@@ -35,8 +35,18 @@ creer_carte <- function(Prenom, debut = 1900, fin = 2015, remplissage = "prop"){
 # Créer une carte d'un prénom par département, le remplissage par défaut
 # est la proportion des naissances.
 # Nécessite un jeu de données spatiales france dans l'environnement global
-
-  tm_shape(sp::merge(france, calculer_prop(Prenom, debut, fin))) +
+  
+  data_prenom <- calculer_prop(Prenom, debut, fin)
+  
+  if(nrow(data_prenom) == 0){
+    france_vide <- tm_shape(france) +
+      tm_borders(alpha = 0.5) +
+      tm_fill(col = "white", id = "nom_dept", popup.vars = c("nom")) +
+      tm_view(set.zoom.limits = c(5, 9))
+    return(france_vide)
+  }
+  
+  tm_shape(sp::merge(france, data_prenom)) +
     tm_borders(alpha = 0.5) +
     tm_fill(col = remplissage, 
             id = "nom_dept", 
@@ -55,6 +65,12 @@ creer_carte <- function(Prenom, debut = 1900, fin = 2015, remplissage = "prop"){
 ameliorer_popup <- function(carte){
   # Améliore les popup. Pour l'instant, plutôt un "hack", d'autres
   # fonctionnalités de tmap devraient venir
+  
+  if(!("total" %in% names(carte$tm_shape$shp@data))){
+    # Si `total` n'est pas dans les noms, il n'y a pas de données prénom
+    # Donc on renvoie la carte vide
+    return(tmap_leaflet(carte))
+  }
   leafmap <- tmap_leaflet(carte)
   
   leafmap$x$calls[[4]]$args[[5]] <- leaflet:::evalFormula(
