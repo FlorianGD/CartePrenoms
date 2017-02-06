@@ -93,16 +93,19 @@ creer_histogramme <- function(Prenom, debut = 1900, fin = 2015){
 #
 # Nécessite le jeu de données prenoms dans l'environnement global
   
-  prenoms %>% 
+  donnees <- prenoms %>% 
     filter(prenom == str_to_upper(Prenom),
            between(annee, debut, fin)) %>% 
     group_by(annee) %>% 
-    summarise(total = sum(nombre)) %>% 
-    ggplot(aes(x = annee, y = total)) +
-      geom_col(alpha = 0.7, fill = "tomato", color = "tomato2") +
-      ggtitle(str_c("Nombre total en France")) +
-      theme(axis.title = element_blank(),
-            panel.background = element_blank())
+    summarise(total = sum(nombre))
+  
+  if(nrow(donnees) == 0) return(NULL)
+  
+  ggplot(donnees, aes(x = annee, y = total)) +
+    geom_col(alpha = 0.7, fill = "tomato", color = "tomato2") +
+    ggtitle(str_c("Nombre total en France")) +
+    theme(axis.title = element_blank(),
+          panel.background = element_blank())
 }
 
 creer_histogramme_prop <- function(Prenom, debut = 1900, fin = 2015){
@@ -115,14 +118,17 @@ creer_histogramme_prop <- function(Prenom, debut = 1900, fin = 2015){
     group_by(annee) %>% 
     summarise(naissances = sum(naissances))
   
-  prenoms %>% 
+  donnees <- prenoms %>% 
     filter(prenom == str_to_upper(Prenom),
            between(annee, debut, fin)) %>% 
     group_by(annee) %>% 
     summarise(total = sum(nombre)) %>% 
     inner_join(naissances_filtre, by = "annee") %>% 
-    mutate(prop = total / naissances * 100) %>% 
-    ggplot(aes(x = annee, y = prop)) +
+    mutate(prop = total / naissances * 100)
+  
+  if(nrow(donnees) == 0) return(NULL)
+  
+  ggplot(donnees, aes(x = annee, y = prop)) +
     geom_col(alpha = 0.7, fill = "tomato", color = "tomato2") +
     ggtitle(str_c("Proportion par an (%)")) +
     theme(axis.title = element_blank(),
@@ -133,17 +139,23 @@ creer_top_dept <- function(Prenom, debut = 1900, fin = 2015){
   # Créer un histogramme contenant les 5 premiers départements
   # avec le plus de ~Prenom entre ~debut et ~fin.
   # Nécessite le jeu de données prenoms dans l'environnement global
-    prenoms %>%
+  
+  donnees <- prenoms %>%
     filter(prenom == str_to_upper(Prenom),
-         between(annee, debut, fin)) %>% 
+           between(annee, debut, fin))
+  
+  if(nrow(donnees) == 0) return(NULL)
+  
+  donnees <- donnees %>% 
     group_by(code_insee) %>% 
     summarise(total = sum(nombre)) %>% 
     inner_join(france@data, by = "code_insee") %>% 
     mutate(depart = fct_reorder(nom_dept, total)) %>% 
-    top_n(5, total) %>% 
-    ggplot(aes(x = depart, y = total)) +
-      geom_col(alpha = 0.7, fill = "coral", color = "coral2") +
-      coord_flip() +
+    top_n(5, total)
+  
+  ggplot(donnees, aes(x = depart, y = total)) +
+    geom_col(alpha = 0.7, fill = "coral", color = "coral2") +
+    coord_flip() +
     ggtitle(str_c("Top 5 des départements\n(nombre de naissances)")) +
     theme(axis.title = element_blank(),
           panel.background = element_blank())
@@ -155,14 +167,19 @@ creer_top_dept_prop <- function(Prenom, debut = 1900, fin = 2015){
   # Nécessite le jeu de données prenoms dans l'environnement global
   # Nécessite le jeu de données naissances dans l'environnement global
   
-  calculer_prop(Prenom, debut, fin) %>% 
+  donnees <- calculer_prop(Prenom, debut, fin)
+  
+  if(nrow(donnees) == 0) return(NULL)
+  
+  donnees <- donnees %>% 
     inner_join(france@data, by = "code_insee") %>% 
     mutate(depart = fct_reorder(nom_dept, prop)) %>% 
-    top_n(5, prop) %>% 
-    ggplot(aes(x = depart, y = prop)) +
-      geom_col(alpha = 0.7, fill = "coral", color = "coral2") +
-      coord_flip() +
-      ggtitle(str_c("Top 5 des départements\n(% des naissances)")) +
-      theme(axis.title = element_blank(),
-            panel.background = element_blank())
+    top_n(5, prop)
+  
+  ggplot(donnees, aes(x = depart, y = prop)) +
+    geom_col(alpha = 0.7, fill = "coral", color = "coral2") +
+    coord_flip() +
+    ggtitle(str_c("Top 5 des départements\n(% des naissances)")) +
+    theme(axis.title = element_blank(),
+          panel.background = element_blank())
 }  
