@@ -10,7 +10,8 @@ library(tidyr)
 library(ggplot2)
 library(forcats)
 
-### Fonctions pour afficher la carte des prénoms
+# Fonctions pour afficher la carte des prénoms ----------------------------
+
 calculer_prop <- function(Prenom, debut = 1900, fin = 2015){
 # Calule la proportion d'un prénom parmi toutes les naissances par département
 # entre les années debut et fin (optionnel)
@@ -41,7 +42,7 @@ creer_carte <- function(Prenom, debut = 1900, fin = 2015, remplissage = "prop"){
   if(nrow(data_prenom) == 0){
     france_vide <- tm_shape(france) +
       tm_borders(alpha = 0.5) +
-      tm_fill(col = "white", id = "nom_dept", popup.vars = c("nom")) +
+      tm_fill(col = "white", popup.vars = FALSE) +
       tm_view(set.zoom.limits = c(5, 9))
     return(france_vide)
   }
@@ -69,7 +70,10 @@ ameliorer_popup <- function(carte){
   if(!("total" %in% names(carte$tm_shape$shp@data))){
     # Si `total` n'est pas dans les noms, il n'y a pas de données prénom
     # Donc on renvoie la carte vide
-    return(tmap_leaflet(carte))
+    return(tmap_leaflet(carte) %>% 
+             addPopups(2.213749, 46.22764, 
+                       "Pas de données trouvées pour le prénom saisi.",
+                       options = popupOptions(closeButton = FALSE)))
   }
   leafmap <- tmap_leaflet(carte)
   
@@ -87,7 +91,9 @@ ameliorer_popup <- function(carte){
   
   leafmap
 }
-#### Fonctions pour les graphes du paneau
+
+# Fonctions pour les graphes du panneau -----------------------------------
+
 creer_histogramme <- function(Prenom, debut = 1900, fin = 2015){
 # Créer un histogramme du nombre de naissances par an d'un prénom
 #
