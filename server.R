@@ -4,11 +4,8 @@ function(input, output, session) {
 
   output$map <- renderLeaflet({
 
-    carte <- ameliorer_popup(
-      creer_carte(input$prenom, input$dates[1], input$dates[2],
-                  remplissage = input$choix)
-      )
-    carte %>% 
+    creer_carte(input$prenom, input$dates[1], input$dates[2],
+                  remplissage = input$choix) %>% 
       clearBounds()
     })
   

@@ -1,5 +1,3 @@
-library(leaflet)
-
 fluidPage(title = "Carte des prénoms en France",
           
           div(class="outer",

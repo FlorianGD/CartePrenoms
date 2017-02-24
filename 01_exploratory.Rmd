@@ -465,7 +465,7 @@ On a en moyenne une erreur de -0.004 naissance par an, qui doit provenir des err
 Nous pouvons maintenant refaire de nouveau la carte. Pour avoir le jeu de données spécifique au prénom, je vais refaire une fonction, vu que je vais copier/coller pour la 3eme fois. Je vais aussi rajouter la possibilité de choisir des dates pour lesquelles faire les proportions.
 
 ```{r Fonction calculer prop}
-# write_csv(prenoms_recalcules, "data/recalc/prenoms_recalcules.csv")
+# write_csv(prenoms_recalcules, "data/recalc/prenoms.csv")
 
 calculer_prop <- function(Prenom, debut = 1900, fin = 2015){
   naissances_filtre <- naissances_histo %>% 
