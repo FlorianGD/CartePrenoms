@@ -1,9 +1,6 @@
 # Fonctions utilises pour recalculer les donnees et les traiter
 
 library(sp)
-library(rgdal)
-library(tmap)
-library(raster)
 library(stringr)
 library(dplyr)
 library(tidyr)
@@ -39,57 +36,43 @@ creer_carte <- function(Prenom, debut = 1900, fin = 2015, remplissage = "prop"){
   
   data_prenom <- calculer_prop(Prenom, debut, fin)
   
+  # S'il n'y a pas de données, afficher une carte blanche
   if(nrow(data_prenom) == 0){
-    france_vide <- tm_shape(france) +
-      tm_borders(alpha = 0.5) +
-      tm_fill(col = "white", popup.vars = FALSE) +
-      tm_view(set.zoom.limits = c(5, 9))
+    france_vide <- leaflet(france) %>% 
+      addProviderTiles("CartoDB.Positron") %>% 
+      addPolygons(color = "grey", weight = 1, fillColor = "white", opacity = 0.7) %>% 
+      addPopups(2.213749, 46.22764, 
+                "Pas de données trouvées pour le prénom saisi.",
+                options = popupOptions(closeButton = FALSE))
     return(france_vide)
   }
   
-  tm_shape(sp::merge(france, data_prenom)) +
-    tm_borders(alpha = 0.5) +
-    tm_fill(col = remplissage, 
-            id = "nom_dept", 
-            title = switch(remplissage,
-                           "prop" = "En %",
-                           "total" = "Nombre"),
-            textNA = "Aucune",
-            popup.vars = c("total", "prop"),
-            legend.format = list(text.separator = "à",
-                                 big.mark = "",
-                                 decimal.mark = ",")) +
-    tm_view(set.zoom.limits = c(5, 9), 
-            legend.position = c("left", "top"))
-}
-
-ameliorer_popup <- function(carte){
-  # Améliore les popup. Pour l'instant, plutôt un "hack", d'autres
-  # fonctionnalités de tmap devraient venir
+  # Ajout des données de prénom à la carte
+  france_prenom <- sp::merge(france, data_prenom)
   
-  if(!("total" %in% names(carte$tm_shape$shp@data))){
-    # Si `total` n'est pas dans les noms, il n'y a pas de données prénom
-    # Donc on renvoie la carte vide
-    return(tmap_leaflet(carte) %>% 
-             addPopups(2.213749, 46.22764, 
-                       "Pas de données trouvées pour le prénom saisi.",
-                       options = popupOptions(closeButton = FALSE)))
-  }
-  leafmap <- tmap_leaflet(carte)
+  # Fonction pour la palette de couleurs
+  bpal <- colorBin("YlOrBr", data_prenom[[remplissage]], bins = 5)
   
-  leafmap$x$calls[[4]]$args[[5]] <- leaflet:::evalFormula(
-    ~paste0(
-      "<div style=\"max-height:10em;overflow:auto;\"><table>\n
-      \t\t\t   <thead><tr><th colspan=\"2\"><b>", nom_dept, "</b></th></thead></tr>
-      <tr><td style=\"color: #888888;\"> Total :&nbsp; </td><td>", round(total), "</td></tr>
-      <tr><td style=\"color: #888888;\"> Proportion :&nbsp; </td><td>", 
-      formatC(prop, digits = 3, decimal.mark = ",") ,"</td></tr>
-      </table></div>"
-    ),
-    data=carte$tm_shape$shp@data
-    )
-  
-  leafmap
+  # La carte
+  leaflet(france_prenom) %>% 
+    addProviderTiles("CartoDB.Positron") %>% 
+    addPolygons(color = "grey", weight = 1, 
+                fillColor = bpal(data_prenom[[remplissage]]), fillOpacity = 0.7, 
+                group = "Departements",
+                popup = leaflet:::evalFormula(
+                  ~paste0(
+                    "<div style=\"max-height:10em;overflow:auto;\"><table>\n
+                    \t\t\t   <thead><tr><th colspan=\"2\"><b>", nom_dept, "</b></th></thead></tr>
+                    <tr><td style=\"color: #888888;\"> Total :&nbsp; </td><td>", round(total), "</td></tr>
+                    <tr><td style=\"color: #888888;\"> Proportion :&nbsp; </td><td>", 
+                    formatC(prop, digits = 3) ,"</td></tr>
+                    </table></div>"
+                  ),
+                  data=france_prenom
+                  )) %>% 
+    addLegend("topleft", pal = bpal, values = data_prenom[[remplissage]], title = "En %", opacity = 1,
+              labFormat = labelFormat(big.mark = "")) 
+    
 }
 
 # Fonctions pour les graphes du panneau -----------------------------------
