@@ -16,8 +16,8 @@ fluidPage(title = "Carte des prénoms en France",
                             
                             h2("Naissances"),
                             
-                            textInput("prenom", "Prénom", "Florian"),
-                            sliderInput("dates", "Dates", 1900, 2015,
+                            textInput("prenom", strong("Prénom"), "Florian"),
+                            sliderInput("dates", strong("Dates"), 1900, 2015,
                                         value = c(1900, 2015), step = 1, sep =""),
                             radioButtons("choix", NULL, 
                                          c("Proportion de naissances" = "prop",
