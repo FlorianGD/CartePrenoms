@@ -39,7 +39,8 @@ creer_carte <- function(Prenom, debut = 1900, fin = 2015, remplissage = "prop"){
   # S'il n'y a pas de données, afficher une carte blanche
   if(nrow(data_prenom) == 0){
     france_vide <- leaflet(france) %>% 
-      addProviderTiles("CartoDB.Positron") %>% 
+      addProviderTiles("CartoDB.Positron", 
+                       options = providerTileOptions(maxZoom = 10, minZoom = 5)) %>% 
       addPolygons(color = "grey", weight = 1, fillColor = "white", opacity = 0.7) %>% 
       addPopups(2.213749, 46.22764, 
                 "Pas de données trouvées pour le prénom saisi.",
@@ -53,25 +54,36 @@ creer_carte <- function(Prenom, debut = 1900, fin = 2015, remplissage = "prop"){
   # Fonction pour la palette de couleurs
   bpal <- colorBin("YlOrBr", data_prenom[[remplissage]], bins = 5)
   
+  #Labels pour le passage de la souris
+  labels <- paste0("<strong>", france_prenom$nom_dept, "</strong><br/>", 
+                   round(france_prenom$total) ," naissances<br/>", 
+                   formatC(france_prenom$prop, digits = 3), "% des naissances") %>% 
+    lapply(htmltools::HTML)
+  
   # La carte
   leaflet(france_prenom) %>% 
-    addProviderTiles("CartoDB.Positron") %>% 
+    addProviderTiles("CartoDB.Positron", 
+                     options = providerTileOptions(maxZoom = 10, minZoom = 5)) %>% 
     addPolygons(color = "grey", weight = 1, 
                 fillColor = bpal(data_prenom[[remplissage]]), fillOpacity = 0.7, 
-                group = "Departements",
-                popup = leaflet:::evalFormula(
-                  ~paste0(
-                    "<div style=\"max-height:10em;overflow:auto;\"><table>\n
-                    \t\t\t   <thead><tr><th colspan=\"2\"><b>", nom_dept, "</b></th></thead></tr>
-                    <tr><td style=\"color: #888888;\"> Total :&nbsp; </td><td>", round(total), "</td></tr>
-                    <tr><td style=\"color: #888888;\"> Proportion :&nbsp; </td><td>", 
-                    formatC(prop, digits = 3) ,"</td></tr>
-                    </table></div>"
-                  ),
-                  data=france_prenom
-                  )) %>% 
-    addLegend("topleft", pal = bpal, values = data_prenom[[remplissage]], title = "En %", opacity = 1,
-              labFormat = labelFormat(big.mark = "")) 
+                highlight = highlightOptions(
+                  weight = 3,
+                  color = "black",
+                  dashArray = "",
+                  fillOpacity = 0.7,
+                  bringToFront = TRUE),
+                label = labels,
+                labelOptions = labelOptions(
+                  style = list("font-weight" = "normal", padding = "3px 8px"),
+                  textsize = "15px",
+                  direction = "auto")) %>% 
+    addLegend("topleft", pal = bpal, values = data_prenom[[remplissage]],
+              title = switch(remplissage, 
+                             "prop" = "En %", 
+                             "total" = "Nombre"), 
+              opacity = 1,
+              labFormat = labelFormat(big.mark = "")) %>% 
+    clearBounds()
     
 }
 

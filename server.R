@@ -5,8 +5,7 @@ function(input, output, session) {
   output$map <- renderLeaflet({
 
     creer_carte(input$prenom, input$dates[1], input$dates[2],
-                  remplissage = input$choix) %>% 
-      clearBounds()
+                  remplissage = input$choix)
     })
   
   output$histogramme <- renderPlot({
