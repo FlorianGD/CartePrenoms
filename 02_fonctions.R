@@ -51,9 +51,13 @@ creer_carte <- function(Prenom, debut = 1900, fin = 2015, remplissage = "prop"){
   # Ajout des données de prénom à la carte
   france_prenom <- sp::merge(france, data_prenom)
   
-  # Fonction pour la palette de couleurs
-  bpal <- colorBin("YlOrBr", data_prenom[[remplissage]], bins = 5)
+  # Gestion du cas sans naissances
+  france_prenom$prop[is.na(france_prenom$prop)] <- 0
+  france_prenom$total[is.na(france_prenom$total)] <- 0
   
+  # Fonction pour la palette de couleurs
+  bpal <- colorBin("YlOrBr", france_prenom[[remplissage]], bins = 5)
+
   #Labels pour le passage de la souris
   labels <- paste0("<strong>", france_prenom$nom_dept, "</strong><br/>", 
                    round(france_prenom$total) ," naissances<br/>", 
@@ -65,7 +69,7 @@ creer_carte <- function(Prenom, debut = 1900, fin = 2015, remplissage = "prop"){
     addProviderTiles("CartoDB.Positron", 
                      options = providerTileOptions(maxZoom = 10, minZoom = 5)) %>% 
     addPolygons(color = "grey", weight = 1, 
-                fillColor = bpal(data_prenom[[remplissage]]), fillOpacity = 0.7, 
+                fillColor = bpal(france_prenom[[remplissage]]), fillOpacity = 0.7, 
                 highlight = highlightOptions(
                   weight = 3,
                   color = "black",
@@ -77,7 +81,7 @@ creer_carte <- function(Prenom, debut = 1900, fin = 2015, remplissage = "prop"){
                   style = list("font-weight" = "normal", padding = "3px 8px"),
                   textsize = "15px",
                   direction = "auto")) %>% 
-    addLegend("topleft", pal = bpal, values = data_prenom[[remplissage]],
+    addLegend("topleft", pal = bpal, values = france_prenom[[remplissage]],
               title = switch(remplissage, 
                              "prop" = "En %", 
                              "total" = "Nombre"), 
